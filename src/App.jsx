@@ -397,7 +397,7 @@ export default function App() {
           {/* PAINEL 04: IA */}
           <section className="panel">
             <div className="content-box">
-              <span className="section-tag">INTELLIGENCE & AUTOMATION</span>
+              <span className="section-tag">INTELIGÊNCIA & AUTOMAÇÃO</span>
               <h1>
                 04. <span className="gold">Projetos IA</span>
               </h1>
@@ -424,7 +424,7 @@ export default function App() {
           {/* PAINEL 05: CONTATO */}
           <section className="panel">
             <div className="content-box">
-              <span className="section-tag">GET IN TOUCH</span>
+              <span className="section-tag">ENTRE EM CONTATO</span>
               <h1>
                 05. <span className="gold">Contato</span>
               </h1>

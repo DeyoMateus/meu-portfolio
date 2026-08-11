@@ -152,8 +152,6 @@ export const projectsData = {
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2011%20de%20ago.%20de%202026,%2000_49_55.png",
       ],
-      demoUrl: "https://seu-link-de-demo.com",
-      githubUrl: "https://github.com/DeyoMateus/seu-repositorio-ia",
     },
     {
       id: "ai-2",
@@ -169,8 +167,6 @@ export const projectsData = {
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/cortana.png",
       ],
-      demoUrl: "https://seu-link-de-demo.com",
-      githubUrl: "https://github.com/DeyoMateus/seu-repositorio-ia",
     },
   ],
 };
