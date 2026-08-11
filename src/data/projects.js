@@ -111,7 +111,6 @@ export const projectsData = {
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2010%20de%20ago.%20de%202026,%2023_27_19.png",
       ],
       tags: ["Node.js", "JavaScript", "NestJs", "PostgreSQL"],
-      githubUrl: "https://github.com/usuario/ai-scraper-service",
     },
     {
       id: "be-2",
@@ -122,7 +121,6 @@ export const projectsData = {
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2010%20de%20ago.%20de%202026,%2023_21_34.png",
       ],
       tags: ["Node.js", "JavaScript", "PostgreSQL"],
-      githubUrl: "https://github.com/usuario/ai-scraper-service",
     },
     {
       id: "be-3",
