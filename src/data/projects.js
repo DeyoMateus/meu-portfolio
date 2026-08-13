@@ -45,11 +45,7 @@ export const projectsData = {
       title: "AçaíFlow",
       description:
         "Aplicação web interativa desenvolvida com TypeScript, HTML e CSS para montagem e personalização de pedidos. Agiliza o atendimento ao cliente com um fluxo visual intuitivo passo a passo. Altamente versátil, pode ser adaptada facilmente para sorveterias, confeitarias e comércios de alimentação, eliminando gargalos de atendimento e acelerando o fluxo de vendas.",
-      highlights: [
-        "Montagem interativa do produto passo a passo com base nos ingredientes disponíveis",
-        "Pode ser convertido tanto para sorveterias, confeitarias e outros.",
-        "Layout limpo e responsivo estruturado com HTML e CSS modernos",
-      ],
+
       tags: ["html", "CSS", "TypeScript"],
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20185156.png",
@@ -76,10 +72,7 @@ export const projectsData = {
       title: "Arquitetura e Interiores",
       description:
         "Landing page de alto padrão voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais de alto valor.",
-      highlights: [
-        "Apresentação visual elegante de projetos arquitetônicos",
-        "Estrutura leve e estilizada puramente em HTML e CSS",
-      ],
+
       tags: ["html", "CSS"],
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184122.png",
@@ -141,11 +134,7 @@ export const projectsData = {
       title: "Automação de Atendimento com LLM",
       description:
         "Pipeline inteligente orquestrado via N8N, OpenAI API e Webhooks. Automatiza a triagem de leads e o suporte ao cliente com inteligência artificial de ponta, acelerando drasticamente o tempo de resposta inicial, escalando conversões e transformando o atendimento digital em uma máquina de vendas operando 24 horas por dia.",
-      highlights: [
-        "Redução de 60% no tempo de resposta inicial de clientes",
-        "Integração contínua com modelos de linguagem avançados",
-        "Processamento de áudio e texto em tempo real",
-      ],
+
       tags: ["N8N", "OpenAI API"],
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2011%20de%20ago.%20de%202026,%2000_49_55.png",
@@ -156,11 +145,7 @@ export const projectsData = {
       title: "Assistente Financeiro",
       description:
         "Solução automatizada de ponta desenvolvida com N8N, Node.js e OpenAI API. Processa dados financeiros via Webhooks com inteligência artificial, categorizando transações, prevendo despesas e gerando relatórios executivos para otimizar o controle de caixa, eliminar planilhas manuais e blindar a saúde financeira do negócio.",
-      highlights: [
-        "Análise preditiva de gastos e despesas",
-        "Categorização inteligente de extratos e transações",
-        "Relatórios automatizados em tempo real",
-      ],
+
       tags: ["N8N", "OpenAI API", "Node.js", "Webhooks"],
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/cortana.png",
