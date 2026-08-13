@@ -1,15 +1,30 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function useIsMobile(breakpoint = 1280) {
-  const [isMobile, setIsMobile] = useState(false);
+  const getIsMobile = () => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.innerWidth <= breakpoint;
+  };
+
+  const [isMobile, setIsMobile] = useState(getIsMobile);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= breakpoint);
+    const mediaQuery = window.matchMedia(`(max-width: ${breakpoint}px)`);
+
+    const update = () => {
+      setIsMobile(mediaQuery.matches);
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+
+    update();
+
+    mediaQuery.addEventListener("change", update);
+
+    return () => {
+      mediaQuery.removeEventListener("change", update);
+    };
   }, [breakpoint]);
 
   return isMobile;
@@ -26,18 +41,30 @@ export function useResponsiveScale() {
     if (width <= 1024) return 0.88;
     if (width <= 1280) return 1.05;
     if (width <= 1500) return 1.15;
+
     return 1.25;
   };
 
-  const [scale, setScale] = useState(() =>
-    typeof window !== "undefined" ? getScale(window.innerWidth) : 1.25,
-  );
+  const [scale, setScale] = useState(() => {
+    if (typeof window === "undefined") {
+      return 1;
+    }
+
+    return getScale(window.innerWidth);
+  });
 
   useEffect(() => {
-    const handleResize = () => setScale(getScale(window.innerWidth));
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const updateScale = () => {
+      setScale(getScale(window.innerWidth));
+    };
+
+    updateScale();
+
+    window.addEventListener("resize", updateScale);
+
+    return () => {
+      window.removeEventListener("resize", updateScale);
+    };
   }, []);
 
   return scale;

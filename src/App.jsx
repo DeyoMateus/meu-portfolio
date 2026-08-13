@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -15,42 +15,42 @@ import { useTiltEffect } from "./hooks/useTiltEffect";
 import { useIsMobile } from "./hooks/useIsMobile";
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
-
 ScrollTrigger.config({ ignoreMobileResize: true });
 
 export default function App() {
   const containerRef = useRef(null);
   const trackRef = useRef(null);
+  const cardRef = useRef(null);
   const scrollProgress = useRef(0);
-  const isMobile = useIsMobile(768);
+
+  const isMobile = useIsMobile(1280);
+  const mobileScrollWrapperRef = useRef(null);
 
   const [progressState, setProgressState] = useState(0);
   const [activePanel, setActivePanel] = useState(0);
   const [selectedProject, setSelectedProject] = useState(null);
-
-  // Estado para navegação do carrossel do Painel 01
   const [profileIndex, setProfileIndex] = useState(0);
 
   const profileCards = [
     {
       title: "Sobre Mim",
       content:
-        "Sempre fui movido pelo desejo de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack. Uno o olhar de quem entende de processos à energia de transformar linhas de código em soluções seguras e escaláveis.",
+        "Sempre fui movido pelo desejo de fazer mais com menos e de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack. Uno o olhar de quem entende de processos à energia de transformar linhas de código em soluções para o seu negócio com foco total em resultados.",
     },
     {
       title: "Experiência & Visão",
       content:
-        "Já vivi a rotina de desafios e melhorias da logística, liderença, produção, análise de dados e gestão de pessoas. Essa vivência me deu uma obsessão. Minimizar o desperdício de tempo e recursos finitos. Levo essa bagagem para o código, criando sistemas leves e intuitivos que trabalham pelas pessoas e não o contrário.",
+        "Vivenciei os desafios da logística, produção e gestão de pessoas. Essa vivência criou uma obsessão por eliminar desperdícios de tempo e recursos finitos. Levo essa bagagem para o código, criando sistemas intuitivos que trabalham pelas pessoas, otimizando operações para gerar economia e aumentar seus ganhos.",
     },
     {
       title: "Motivação",
       content:
-        "Para mim, nada é tão bom que não possa melhorar. Aquele frio na barriga de ver um problema difícil e pensar 'preciso descobrir como resolver isso' é o que me faz buscar a evolução constante. O desafio é o maior combustível.",
+        "Nada é tão bom que não possa ser melhorado. O que acende minha vontade de resolver problemas complexos é o impacto prático do resultado. Saber o quanto uma boa solução vai poupar tempo, cortar custos e impulsionar seus ganhos é o combustível que me move rumo à evolução constante e à entrega de valor real.",
     },
     {
       title: "Missão",
       content:
-        "Criei a FVF Soluções Tech para não guardar boas ideias só para mim. Minha missão é levar eficiência ao maior número de pessoas, seja com automações inteligentes, aprimoramento no fluxo de atendimento, posicionamento digital ou um ERP robusto que devolva o tempo de quem empreende.",
+        "Criei a FVF Soluções Tech para dar força a quem empreende, tornando a tecnologia complexa em algo simples e de aplicação imediata. Minha missão é entregar velocidade e segurança com automações e aplicações que devolvem o seu tempo, garantindo que cada entrega gere valor real para o crescimento empresarial.",
     },
     {
       title: "Tech Stack & Ferramentas",
@@ -69,115 +69,149 @@ export default function App() {
 
   useTiltEffect();
 
+  useEffect(() => {
+    const updateCardHeight = () => {
+      const card = cardRef.current;
+      if (!card) return;
+      card.style.height = "auto";
+      const newHeight = card.scrollHeight;
+      card.style.height = `${newHeight}px`;
+    };
+
+    updateCardHeight();
+
+    window.addEventListener("resize", updateCardHeight);
+    return () => window.removeEventListener("resize", updateCardHeight);
+  }, [profileIndex, isMobile]);
+
   useGSAP(
     () => {
       const track = trackRef.current;
+      if (!track) return;
+
       const panels = gsap.utils.toArray(".panel");
+      if (!panels.length) return;
+
       const totalPanels = panels.length;
+      const PANEL_SELECTOR = `
+          .section-tag, h1, .description, .tech-stack,
+          .projects-wrapper, .contact-container, .profile-card-container,
+          .profile-header, .profile-card-large, .profile-carousel-container,
+          .profile-dots-indicator
+        `;
 
-      const PANEL_SELECTOR =
-        ".section-tag, h1, .description, .tech-stack, .projects-wrapper, .contact-container, .profile-card-container";
-
-      // TODOS os painéis (incluindo o 01) entram no sistema reativo —
-      // é isso que faz o 01 sumir de verdade quando o scroll avança
-      // pro 02, em vez de ficar preso em opacidade 1 pra sempre.
       const allPanels = panels.map((panel) => ({
         panel,
         els: panel.querySelectorAll(PANEL_SELECTOR),
       }));
 
-      // Só o Painel 01 ganha aquela entrada bonita com stagger ao
-      // carregar a página (os outros começam invisíveis, esperando
-      // o scroll trazê-los).
-      if (allPanels[0] && allPanels[0].els.length > 0) {
-        gsap.fromTo(
-          allPanels[0].els,
-          { y: 20, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.8,
-            stagger: 0.08,
-            delay: 0.1,
-            ease: "power2.out",
-            clearProps: "all",
-          },
-        );
-      }
+      // ==========================================
+      // MOBILE / TABLET
+      // ==========================================
+      if (isMobile) {
+        const wrapper = mobileScrollWrapperRef.current;
+        if (!wrapper) return;
 
-      const clamp01 = gsap.utils.clamp(0, 1);
-      const mapRange = (value, inMin, inMax, outMin, outMax) => {
-        const t = clamp01((value - inMin) / (inMax - inMin));
-        return outMin + (outMax - outMin) * t;
-      };
+        let rafId = null;
 
-      function updatePanelTransforms(targets) {
-        const width = window.innerWidth;
-        const viewportCenter = width / 2;
-        const PLATEAU_START = 0.35;
-        const PLATEAU_END = 0.65;
+        const updateMobilePanels = () => {
+          rafId = null;
+          const viewportHeight = window.innerHeight;
+          const animationLimit = viewportHeight * 0.35;
+          const fadeStart = viewportHeight * 0.4;
+          const fadeDistance = fadeStart - animationLimit;
 
-        // Resgatamos o progresso geral do scroll (de 0 a 1) para usar como trava
-        const currentProg = scrollProgress.current;
+          let closestIndex = 0;
+          let closestDistance = Infinity;
 
-        // --- PASSO 1: apenas LEITURAS de layout ---
-        // Passamos o 'index' no map para identificar exatamente qual é o painel
-        const writes = targets.map(({ panel, els }, index) => {
-          const rect = panel.getBoundingClientRect();
-          const panelCenter = rect.left + rect.width / 2;
+          allPanels.forEach(({ panel, els }, index) => {
+            const panelRect = panel.getBoundingClientRect();
+            const panelCenter = panelRect.top + panelRect.height / 2;
+            const contentCenter =
+              animationLimit + (viewportHeight - animationLimit) / 2;
+            const distance = Math.abs(panelCenter - contentCenter);
 
-          const p = clamp01(
-            mapRange(
-              panelCenter,
-              viewportCenter + width,
-              viewportCenter - width,
-              0,
-              1,
-            ),
-          );
-
-          let opacity;
-          if (p <= 0.15 || p >= 0.85) {
-            opacity = 0;
-          } else if (p < PLATEAU_START) {
-            opacity = mapRange(p, 0.15, PLATEAU_START, 0, 1);
-          } else if (p <= PLATEAU_END) {
-            opacity = 1;
-          } else {
-            opacity = mapRange(p, PLATEAU_END, 0.85, 1, 0);
-          }
-
-          // --- NOVA TRAVA DE SEGURANÇA PARA EXTREMIDADES ---
-          const isFirstPanel = index === 0;
-          const isLastPanel = index === targets.length - 1;
-
-          if (isFirstPanel && currentProg <= 0.05) {
-            // Se o scroll está grudado no topo, crava o painel 01 em 100% visível
-            opacity = 1;
-          } else if (isLastPanel && currentProg >= 0.95) {
-            // Se o scroll bateu no final, crava o último painel em 100% visível
-            opacity = 1;
-          } else if (isFirstPanel) {
-            // Mantém o ajuste fino antigo para o Painel 01 apenas quando ele estiver rolando no meio do caminho
-            const distFromRest = Math.abs(p - 0.5);
-            if (distFromRest < 0.18) {
-              opacity = 1;
-            } else if (distFromRest < 0.35) {
-              opacity = mapRange(distFromRest, 0.18, 0.35, 1, 0);
-            } else {
-              opacity = 0;
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = index;
             }
-          }
 
-          return { els, opacity };
-        });
+            els.forEach((element) => {
+              const rect = element.getBoundingClientRect();
+              let opacity = 1;
 
-        // --- PASSO 2: apenas ESCRITAS de estilo ---
-        writes.forEach(({ els, opacity }) => {
-          gsap.killTweensOf(els, "opacity");
-          gsap.set(els, { opacity });
+              if (rect.bottom <= animationLimit) {
+                opacity = 0;
+              } else if (rect.bottom < fadeStart) {
+                opacity = (rect.bottom - animationLimit) / fadeDistance;
+              }
+
+              const enterStart = viewportHeight - fadeDistance;
+              if (rect.top > enterStart) {
+                const enterOpacity = (viewportHeight - rect.top) / fadeDistance;
+                opacity = Math.min(opacity, enterOpacity);
+              }
+
+              element.style.opacity = Math.max(0, Math.min(1, opacity));
+              element.style.visibility = "visible";
+            });
+          });
+
+          setActivePanel((previous) =>
+            previous !== closestIndex ? closestIndex : previous,
+          );
+          const progress =
+            totalPanels <= 1 ? 0 : closestIndex / (totalPanels - 1);
+          scrollProgress.current = progress;
+          setProgressState(Math.round(progress * 100) / 100);
+        };
+
+        const requestMobileUpdate = () => {
+          if (rafId !== null) return;
+          rafId = requestAnimationFrame(updateMobilePanels);
+        };
+
+        wrapper.addEventListener("scroll", requestMobileUpdate, {
+          passive: true,
         });
+        window.addEventListener("resize", requestMobileUpdate);
+        requestMobileUpdate();
+
+        return () => {
+          wrapper.removeEventListener("scroll", requestMobileUpdate);
+          window.removeEventListener("resize", requestMobileUpdate);
+          if (rafId !== null) cancelAnimationFrame(rafId);
+
+          allPanels.forEach(({ els }) => {
+            els.forEach((element) => {
+              element.style.opacity = "";
+            });
+          });
+        };
       }
+
+      // ==========================================
+      // DESKTOP
+      // ==========================================
+      const clamp01 = gsap.utils.clamp(0, 1);
+
+      const updateDesktopPanels = (progress) => {
+        allPanels.forEach(({ els }, index) => {
+          const panelCenterProgress = index / (totalPanels - 1);
+          const distance = Math.abs(progress - panelCenterProgress);
+          let opacity = 0;
+
+          if (distance < 0.25) {
+            opacity = clamp01(1 - distance * 4);
+          }
+          if (index === totalPanels - 1 && progress >= 0.95) {
+            opacity = 1;
+          }
+          els.forEach((element) => {
+            element.style.opacity = opacity;
+          });
+        });
+      };
 
       const horizontalTween = gsap.to(track, {
         x: () => -(track.scrollWidth - window.innerWidth),
@@ -185,90 +219,119 @@ export default function App() {
         scrollTrigger: {
           trigger: containerRef.current,
           pin: true,
-
           scrub: 0.4,
-
           anticipatePin: 1,
           start: "top top",
-          end: () => `+=${track.scrollWidth - window.innerWidth}`,
+          end: () => `+=${Math.max(0, track.scrollWidth - window.innerWidth)}`,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            const prog = self.progress;
-            scrollProgress.current = prog;
+            const progress = self.progress;
+            scrollProgress.current = progress;
+            const currentIndex = Math.round(progress * (totalPanels - 1));
 
-            // 1. Evita lag cortando os re-renders excessivos do React
-            const roundedProg = Math.round(prog * 100) / 100;
-            setProgressState((prev) =>
-              prev !== roundedProg ? roundedProg : prev,
+            setActivePanel((previous) =>
+              previous !== currentIndex ? currentIndex : previous,
             );
-
-            // 2. Corrige a matemática da bolinha ativa no menu
-            const currentIndex = Math.round(prog * (totalPanels - 1));
-            setActivePanel((prev) =>
-              prev !== currentIndex ? currentIndex : prev,
-            );
-
-            updatePanelTransforms(allPanels);
+            setProgressState(Math.round(progress * 100) / 100);
+            updateDesktopPanels(progress);
           },
         },
       });
 
-      // Estado inicial: só sincroniza os painéis 02-05 (índices 1-4).
-      // O Painel 01 fica de fora dessa chamada de propósito, pra não
-      // atropelar a animação de entrada (fromTo) que acabou de começar.
-      updatePanelTransforms(allPanels.slice(1));
-
       ScrollTrigger.refresh();
 
-      setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 100);
+      return () => {
+        horizontalTween.kill();
+        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+
+        // CORREÇÃO: Resetar estilos para que os elementos não fiquem presos com "opacity: 0"
+        // ao redimensionar a tela ou transitar entre abas/resoluções.
+        allPanels.forEach(({ els }) => {
+          els.forEach((element) => {
+            element.style.opacity = "";
+            element.style.visibility = "";
+          });
+        });
+      };
     },
-    { scope: containerRef },
+    { scope: containerRef, dependencies: [isMobile] },
   );
 
   const handleNavigate = (index) => {
     const track = trackRef.current;
     if (!track) return;
 
-    const totalPanels = track.querySelectorAll(".panel").length;
-    const maxScroll = track.scrollWidth - window.innerWidth;
-    const targetScroll = (index / (totalPanels - 1)) * maxScroll;
+    if (isMobile) {
+      const wrapper = mobileScrollWrapperRef.current;
+      if (!wrapper) return;
 
-    // Usamos o GSAP para suavizar o scroll do clique, eliminando o comportamento de "voar"
+      const panels = track.querySelectorAll(".panel");
+      const targetPanel = panels[index];
+      if (!targetPanel) return;
+
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const panelRect = targetPanel.getBoundingClientRect();
+      // Compensa os 35% de área vazia 3D do mobile
+      const topOffset = window.innerHeight * 0.35;
+      const scrollTop =
+        wrapper.scrollTop + (panelRect.top - wrapperRect.top) - topOffset;
+
+      wrapper.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: "smooth",
+      });
+      return;
+    }
+
+    // ==========================================
+    // CORREÇÃO: LÓGICA DE NAVEGAÇÃO DESKTOP
+    // ==========================================
+    // O número total de painéis é sempre 5
+    const totalPanels = 5;
+
+    // Distância total que o ScrollTrigger precisa rolar para chegar ao fim
+    const maxScroll = track.scrollWidth - window.innerWidth;
+
+    // Converte o índice do menu (0, 1, 2, 3, 4) em uma porcentagem (0, 0.25, 0.5, 0.75, 1)
+    const progress = index / (totalPanels - 1);
+
+    // Transforma a porcentagem na quantidade de pixels que a janela precisa descer
+    const scrollAmount = progress * maxScroll;
+
+    // Dispara a rolagem
     gsap.to(window, {
-      scrollTo: targetScroll,
-      duration: 1.2, // Tempo em segundos para a transição do clique
+      scrollTo: { y: scrollAmount },
+      duration: 1.2,
       ease: "power2.out",
-      overwrite: "auto", // Impede conflitos caso o usuário clique em outro botão no meio do caminho
+      overwrite: "auto",
     });
   };
 
   return (
     <>
-      {/* Canvas 3D no fundo */}
-      <ParticleCanvas />
+      {/* CORREÇÃO: Div container forçando as partículas customizadas a ficarem no fundo sem bloquear clique */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <ParticleCanvas />
+      </div>
+
       <Navbar
         activePanel={activePanel}
         onNavigate={handleNavigate}
         progress={progressState}
       />
 
-      {/*
-
-      */}
-      <div id="canvas-container">
+      {/* CORREÇÃO: Reforço de segurança nos cliques pro R3F */}
+      <div id="canvas-container" style={{ pointerEvents: "none", zIndex: 5 }}>
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={[
-            1,
-            isMobile
-              ? 1.5
-              : Math.min(
-                  typeof window !== "undefined" ? window.devicePixelRatio : 1,
-                  2,
-                ),
-          ]}
+          dpr={[1, isMobile ? 1.2 : 1.5]}
           gl={{ powerPreference: "high-performance", antialias: false }}
         >
           <ambientLight intensity={1} />
@@ -276,204 +339,189 @@ export default function App() {
         </Canvas>
       </div>
 
-      <div className="scroll-container" ref={containerRef}>
-        <div className="track" ref={trackRef}>
-          {/* PAINEL 01: APRESENTAÇÃO */}
-          <section className="panel">
-            <div className="content-box profile-card-container">
-              <span className="section-tag">VISÃO GERAL &amp; PERFIL</span>
-
-              {/* Cabeçalho do Perfil */}
-              <div className="profile-header">
-                <div className="profile-avatar-wrapper">
-                  <img
-                    src="https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Eu.png"
-                    alt="Deyo Mateus"
-                    className="profile-avatar-img"
-                  />
-                </div>
-
-                <div className="profile-info">
-                  <h1>
-                    01. <span className="gold">Deyo Mateus</span>
-                  </h1>
-                  <div className="profile-headline">
-                    <span className="profile-title">
-                      Desenvolvedor Full Stack &amp; Founder
-                    </span>
-                    <span className="profile-company-badge">
-                      FVF Soluções Tech
-                    </span>
+      {/* CORREÇÃO: zIndex 10 e position relative garante que sua UI fique inteira na frente do muro transparente 3D */}
+      <div
+        className="mobile-scroll-wrapper"
+        ref={mobileScrollWrapperRef}
+        style={{ position: "relative", zIndex: 10 }}
+      >
+        <div className="scroll-container" ref={containerRef}>
+          <div className="track" ref={trackRef}>
+            {/* PAINEL 01 */}
+            <section className="panel">
+              <div className="content-box profile-card-container">
+                <span className="section-tag">VISÃO GERAL &amp; PERFIL</span>
+                <div className="profile-header">
+                  <div className="profile-avatar-wrapper">
+                    <img
+                      src="https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Eu.png"
+                      alt="Deyo Mateus"
+                      className="profile-avatar-img"
+                    />
                   </div>
-                  <p className="profile-tagline">
-                    A Engenharia focada em eficiência operacional, economia e
-                    impacto no seu negócio.
-                  </p>
-                </div>
-              </div>
-
-              {/* Carrossel de Cards com Setas Laterais */}
-              <div className="profile-carousel-container">
-                <button
-                  className="profile-nav-btn"
-                  onClick={() =>
-                    setProfileIndex((prev) =>
-                      prev === 0 ? profileCards.length - 1 : prev - 1,
-                    )
-                  }
-                  aria-label="Card anterior"
-                >
-                  ‹
-                </button>
-
-                <div className="profile-card-large">
-                  <h3>{profileCards[profileIndex].title}</h3>
-                  {profileCards[profileIndex].isTech ? (
-                    <div className="tech-stack" style={{ marginTop: "0.4rem" }}>
-                      {profileCards[profileIndex].tags.map((tag, idx) => (
-                        <span key={idx}>{tag}</span>
-                      ))}
+                  <div className="profile-info">
+                    <h1>
+                      01. <span className="gold">Deyo Mateus</span>
+                    </h1>
+                    <div className="profile-headline">
+                      <span className="profile-title">
+                        Desenvolvedor Full Stack &amp; Founder
+                      </span>
+                      <span className="profile-company-badge">
+                        FVF Soluções Tech
+                      </span>
                     </div>
-                  ) : (
-                    <p>{profileCards[profileIndex].content}</p>
-                  )}
+                    <p className="profile-tagline">
+                      A Engenharia focada em eficiência operacional, economia e
+                      impacto no seu negócio.
+                    </p>
+                  </div>
                 </div>
 
-                <button
-                  className="profile-nav-btn"
-                  onClick={() =>
-                    setProfileIndex((prev) =>
-                      prev === profileCards.length - 1 ? 0 : prev + 1,
-                    )
-                  }
-                  aria-label="Próximo card"
-                >
-                  ›
-                </button>
-              </div>
-
-              {/* Indicadores de Páginas (Dots) */}
-              <div className="profile-dots-indicator">
-                {profileCards.map((_, idx) => (
+                <div className="profile-carousel-container">
                   <button
-                    key={idx}
-                    className={`profile-dot ${
-                      idx === profileIndex ? "active" : ""
-                    }`}
-                    onClick={() => setProfileIndex(idx)}
-                    aria-label={`Ir para o card ${idx + 1}`}
+                    className="profile-nav-btn"
+                    onClick={() =>
+                      setProfileIndex((prev) =>
+                        prev === 0 ? profileCards.length - 1 : prev - 1,
+                      )
+                    }
+                  >
+                    ‹
+                  </button>
+                  <div className="profile-card-large" ref={cardRef}>
+                    <h3>{profileCards[profileIndex].title}</h3>
+                    {profileCards[profileIndex].isTech ? (
+                      <div
+                        className="tech-stack"
+                        style={{ marginTop: "0.4rem" }}
+                      >
+                        {profileCards[profileIndex].tags.map((tag, idx) => (
+                          <span key={idx}>{tag}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p>{profileCards[profileIndex].content}</p>
+                    )}
+                  </div>
+                  <button
+                    className="profile-nav-btn"
+                    onClick={() =>
+                      setProfileIndex((prev) =>
+                        prev === profileCards.length - 1 ? 0 : prev + 1,
+                      )
+                    }
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* PAINEL 02 */}
+            <section className="panel">
+              <div className="content-box">
+                <span className="section-tag">UI / UX & INTERAÇÃO</span>
+                <h1>
+                  02. <span className="gold">Projetos Front-end</span>
+                </h1>
+                <p className="description">
+                  Aplicações intuitivas focadas em usabilidade, animações
+                  fluidas e interfaces reativas com atenção aos mínimos
+                  detalhes.
+                </p>
+                <div className="tech-stack">
+                  <span>JavaScript</span>
+                  <span>Next.js</span>
+                  <span>TypeScript</span>
+                  <span>React</span>
+                  <span>Framer Motion</span>
+                  <span>Three.js</span>
+                </div>
+                <div className="projects-wrapper">
+                  <ProjectsGallery
+                    projects={projectsData.frontend}
+                    categoryTitle="Destaques Front-end"
+                    onSelectProject={setSelectedProject}
                   />
-                ))}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* PAINEL 02: FRONT-END */}
-          <section className="panel">
-            <div className="content-box">
-              <span className="section-tag">UI / UX & INTERAÇÃO</span>
-              <h1>
-                02. <span className="gold">Projetos Front-end</span>
-              </h1>
-              <p className="description">
-                Aplicações intuitivas focadas em usabilidade, animações fluidas
-                e interfaces reativas com atenção aos mínimos detalhes.
-              </p>
-              <div className="tech-stack">
-                <span>JavaScript</span>
-                <span>Next.js</span>
-                <span>TypeScript</span>
-                <span>React</span>
-                <span>Framer Motion</span>
-                <span>Three.js</span>
+            {/* PAINEL 03 */}
+            <section className="panel">
+              <div className="content-box">
+                <span className="section-tag">ARQUITETURA & API</span>
+                <h1>
+                  03. <span className="gold">Projetos Back-end</span>
+                </h1>
+                <p className="description">
+                  Sistemas escaláveis, bancos de dados otimizados e serviços
+                  robustos construídos para garantir performance e segurança.
+                </p>
+                <div className="tech-stack">
+                  <span>Node.js</span>
+                  <span>NestJs</span>
+                  <span>PostgreSQL</span>
+                  <span>MongoDB</span>
+                  <span>Docker</span>
+                  <span>Prisma</span>
+                  <span>TypeORM</span>
+                  <span>Sequelize</span>
+                  <span>Express</span>
+                </div>
+                <div className="projects-wrapper">
+                  <ProjectsGallery
+                    projects={projectsData.backend}
+                    categoryTitle="Destaques Back-end"
+                    onSelectProject={setSelectedProject}
+                  />
+                </div>
               </div>
+            </section>
 
-              <div className="projects-wrapper">
-                <ProjectsGallery
-                  projects={projectsData.frontend}
-                  categoryTitle="Destaques Front-end"
-                  onSelectProject={setSelectedProject}
-                />
+            {/* PAINEL 04 */}
+            <section className="panel">
+              <div className="content-box">
+                <span className="section-tag">INTELIGÊNCIA & AUTOMAÇÃO</span>
+                <h1>
+                  04. <span className="gold">Projetos IA</span>
+                </h1>
+                <p className="description">
+                  Integração de modelos de linguagem (LLMs), automações
+                  inteligentes e soluções de IA aplicadas a produtos do mundo
+                  real.
+                </p>
+                <div className="tech-stack">
+                  <span>Python</span>
+                  <span>OpenAI / Gemini API</span>
+                  <span>LangChain</span>
+                </div>
+                <div className="projects-wrapper">
+                  <ProjectsGallery
+                    projects={projectsData.ai}
+                    categoryTitle="Automações de IA & Machine Learning"
+                    onSelectProject={setSelectedProject}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* PAINEL 03: BACK-END */}
-          <section className="panel">
-            <div className="content-box">
-              <span className="section-tag">ARQUITETURA & API</span>
-              <h1>
-                03. <span className="gold">Projetos Back-end</span>
-              </h1>
-              <p className="description">
-                Sistemas escaláveis, bancos de dados otimizados e serviços
-                robustos construídos para garantir performance e segurança.
-              </p>
-              <div className="tech-stack">
-                <span>Node.js</span>
-                <span>NestJs</span>
-                <span>PostgreSQL</span>
-                <span>MongoDB</span>
-                <span>Docker</span>
-                <span>Prisma</span>
-                <span>TypeORM</span>
-                <span>Sequelize</span>
-                <span>Express</span>
+            {/* PAINEL 05 */}
+            <section className="panel">
+              <div className="content-box">
+                <span className="section-tag">ENTRE EM CONTATO</span>
+                <h1>
+                  05. <span className="gold">Contato</span>
+                </h1>
+                <p className="description">
+                  Tem um projeto em mente ou deseja conversar sobre
+                  oportunidades? Envie uma mensagem ou conecte-se comigo.
+                </p>
+                <ContactSection />
               </div>
-
-              <div className="projects-wrapper">
-                <ProjectsGallery
-                  projects={projectsData.backend}
-                  categoryTitle="Destaques Back-end"
-                  onSelectProject={setSelectedProject}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* PAINEL 04: IA */}
-          <section className="panel">
-            <div className="content-box">
-              <span className="section-tag">INTELIGÊNCIA & AUTOMAÇÃO</span>
-              <h1>
-                04. <span className="gold">Projetos IA</span>
-              </h1>
-              <p className="description">
-                Integração de modelos de linguagem (LLMs), automações
-                inteligentes e soluções de IA aplicadas a produtos do mundo
-                real.
-              </p>
-              <div className="tech-stack">
-                <span>Python</span>
-                <span>OpenAI / Gemini API</span>
-                <span>LangChain</span>
-              </div>
-              <div className="projects-wrapper">
-                <ProjectsGallery
-                  projects={projectsData.ai}
-                  categoryTitle="Automações de IA & Machine Learning"
-                  onSelectProject={setSelectedProject}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* PAINEL 05: CONTATO */}
-          <section className="panel">
-            <div className="content-box">
-              <span className="section-tag">ENTRE EM CONTATO</span>
-              <h1>
-                05. <span className="gold">Contato</span>
-              </h1>
-              <p className="description">
-                Tem um projeto em mente ou deseja conversar sobre oportunidades?
-                Envie uma mensagem ou conecte-se comigo.
-              </p>
-              <ContactSection />
-            </div>
-          </section>
-
-          <div style={{ position: "relative", minHeight: "100vh" }}></div>
+            </section>
+          </div>
         </div>
       </div>
 

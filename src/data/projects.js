@@ -6,7 +6,7 @@ export const projectsData = {
       id: "fe-2",
       title: "SaaS Barbearia",
       description:
-        "Painel administrativo completo construído em React, JavaScript e CSS, complementado por manipulação visual via Canvas. Ideal para gerenciar o fluxo de clientes, horários e faturamento de barbearias com agilidade na rotina.",
+        "Sistema inteligente que liberta a barbearia do controle manual no papel. Conta com painel administrativo para gestão de serviços, preços, equipe e relatórios financeiros. Oferece abas intuitivas para agendamentos, histórico, controle de disponibilidade e perfil. Possui automações avançadas como notificações em tempo real, relatórios diários, lembretes e reativação de clientes inativos em conformidade com a LGPD.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20174821.png",
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-11%20001250.png",
@@ -26,7 +26,7 @@ export const projectsData = {
       id: "fe-3",
       title: "DEVCLUB",
       description:
-        "Aplicação espacial de alta imersão estruturada com TypeScript e JavaScript, fazendo uso intenso de Canvas 2D e estilização CSS avançada para renderizar animações fluidas e elementos visuais interativos.",
+        "Plataforma de ensino imersiva que transforma a jornada de aprendizado em uma experiência visualmente rica. Desenvolvida com TypeScript e Canvas 2D, prioriza uma navegação fluida e intuitiva para que o aluno explore aulas demonstrativas com total conforto. O projeto une alta performance técnica a um design focado em engajamento, elevando o aprendizado a um novo patamar de usabilidade.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20183829.png",
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20183850.png",
@@ -44,7 +44,7 @@ export const projectsData = {
       id: "fe-4",
       title: "AçaíFlow",
       description:
-        "Interface web interativa desenvolvida com TypeScript, HTML e CSS voltada para a montagem e personalização de Açaí de acordo com os ingredientes disponíveis. Agiliza o processo de escolha do cliente com um fluxo visual limpo e intuitivo.",
+        "Aplicação web interativa desenvolvida com TypeScript, HTML e CSS para montagem e personalização de pedidos. Agiliza o atendimento ao cliente com um fluxo visual intuitivo passo a passo. Altamente versátil, pode ser adaptada facilmente para sorveterias, confeitarias e comércios de alimentação, eliminando gargalos de atendimento e acelerando o fluxo de vendas.",
       highlights: [
         "Montagem interativa do produto passo a passo com base nos ingredientes disponíveis",
         "Pode ser convertido tanto para sorveterias, confeitarias e outros.",
@@ -75,7 +75,7 @@ export const projectsData = {
       id: "fe-5",
       title: "Arquitetura e Interiores",
       description:
-        "Landing page focada em design de interiores e arquitetura, estruturada com HTML e CSS para destacar portfólios visuais e otimizar a captação de clientes que buscam projetos residenciais ou comerciais.",
+        "Landing page de alto padrão voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais de alto valor.",
       highlights: [
         "Apresentação visual elegante de projetos arquitetônicos",
         "Estrutura leve e estilizada puramente em HTML e CSS",
@@ -93,7 +93,7 @@ export const projectsData = {
       id: "fe-1",
       title: "Dev Burguer Interface",
       description:
-        "Interface desenvolvida com React e JavaScript puro que utiliza o poder do CSS moderno para criar um layout fluido e intuitivo, facilitando a escolha e o pedido ágil de lanches no dia a dia.",
+        "Interface moderna e de alta conversão desenvolvida com React, JavaScript e CSS. Focada no setor de hamburguerias e delivery, oferece um fluxo ágil, intuitivo e responsivo para a escolha de lanches, otimizando a experiência do cliente e acelerando os pedidos diretamente no ambiente digital.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20182026.png",
       ],
@@ -106,7 +106,7 @@ export const projectsData = {
       id: "be-1",
       title: "FVF Hórus",
       description:
-        "Sistema de Gestão de Ponto em desenvolvimento utilizando Node.js, JavaScript e banco relacional PostgreSQL. Chegará ao mercado para trazer uma revolução completa em termos de gestão corporativa, segurança e confiabilidade.",
+        "Plataforma SaaS em desenvolvimento para auditoria de jornada e conformidade logística para transportadoras. Desenvolvida com Node.js, NestJS e PostgreSQL, une hash imutável tipo blockchain, biometria por voz e integração com CT-e. Automatiza a Lei do Motorista, zera passivos trabalhistas, recupera receita com diárias de espera e previne acidentes.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2010%20de%20ago.%20de%202026,%2023_27_19.png",
       ],
@@ -116,7 +116,7 @@ export const projectsData = {
       id: "be-2",
       title: "Saas Barbearia Backend",
       description:
-        "Arquitetura de backend escalável construída com Node.js, JavaScript e PostgreSQL. Processa regras de agendamento e segurança de dados, garantindo alta performance na gestão diária de barbearias.",
+        "Arquitetura de backend robusta e escalável desenvolvida com Node.js e PostgreSQL para o SaaS de barbearias. Gerencia regras de agendamento complexas, segurança de dados e automações inteligentes em segundo plano, como notificações em tempo real, lembretes e reativação de clientes inativos conforme a LGPD.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/ChatGPT%20Image%2010%20de%20ago.%20de%202026,%2023_21_34.png",
       ],
@@ -126,7 +126,7 @@ export const projectsData = {
       id: "be-3",
       title: "Dev Burguer Backend",
       description:
-        "API robusta desenvolvida em Node.js com JavaScript, armazenamento de dados em MongoDB/PostgreSQL, desenhada para gerenciar pedidos de e-commerce e estoque com total confiabilidade operacional.",
+        "API robusta desenvolvida em Node.js com JavaScript e persistência em MongoDB e PostgreSQL. Projetada para gerenciar pedidos de e-commerce e controle de estoque com total confiabilidade operacional, garantindo alta performance e estabilidade para suportar picos de vendas no setor de alimentação e delivery.",
       images: [
         "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=800&auto=format&fit=crop",
       ],
@@ -140,7 +140,7 @@ export const projectsData = {
       id: "ai-1",
       title: "Automação de Atendimento com LLM",
       description:
-        "Pipeline inteligente orquestrado via N8N e integrado à OpenAI API e Webhooks. Automatiza a triagem de leads e suporte, acelerando as respostas iniciais e otimizando o fluxo de atendimento diário.",
+        "Pipeline inteligente orquestrado via N8N, OpenAI API e Webhooks. Automatiza a triagem de leads e o suporte ao cliente com inteligência artificial de ponta, acelerando drasticamente o tempo de resposta inicial, escalando conversões e transformando o atendimento digital em uma máquina de vendas operando 24 horas por dia.",
       highlights: [
         "Redução de 60% no tempo de resposta inicial de clientes",
         "Integração contínua com modelos de linguagem avançados",
@@ -155,7 +155,7 @@ export const projectsData = {
       id: "ai-2",
       title: "Assistente Financeiro",
       description:
-        "Solução automatizada desenvolvida com N8N, Node.js e OpenAI API que processa dados financeiros via Webhooks, gerando relatórios práticos para auxiliar no controle de orçamentos.",
+        "Solução automatizada de ponta desenvolvida com N8N, Node.js e OpenAI API. Processa dados financeiros via Webhooks com inteligência artificial, categorizando transações, prevendo despesas e gerando relatórios executivos para otimizar o controle de caixa, eliminar planilhas manuais e blindar a saúde financeira do negócio.",
       highlights: [
         "Análise preditiva de gastos e despesas",
         "Categorização inteligente de extratos e transações",

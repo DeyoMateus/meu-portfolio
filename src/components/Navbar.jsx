@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useIsMobile } from "../hooks/useIsMobile"; // Ajuste o caminho do import conforme necessário
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const NAV_ITEMS = [
   { id: 0, label: "01. Apresentação" },
@@ -13,7 +13,7 @@ export default function Navbar({ activePanel, onNavigate, progress = 0 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Utiliza o hook para detectar se está em mobile/tablet estreito (<= 768px)
-  const isMobile = useIsMobile(768);
+  const isMobile = useIsMobile(1280);
 
   const handleNavigate = (id) => {
     onNavigate(id);

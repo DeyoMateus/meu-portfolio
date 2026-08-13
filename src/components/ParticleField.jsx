@@ -43,7 +43,7 @@ function useParticleTexture() {
 }
 
 export default function ParticleField({ scrollProgress }) {
-  const isMobile = useIsMobile(1024);
+  const isMobile = useIsMobile(1280);
   const responsiveScale = useResponsiveScale();
   const { camera, size } = useThree();
 
@@ -69,16 +69,18 @@ export default function ParticleField({ scrollProgress }) {
   const mobileFitScale = useMemo(() => {
     if (!isMobile) return null;
     const fullWorldHeight = getWorldViewportHeight(camera, cameraDistance);
-    const reservedWorldHeight = fullWorldHeight * 0.38; // faixa dos 38%
-    const targetExtent = reservedWorldHeight * 0.6;
+    // Diminuímos o "respiro" para 0.28 (28%) para que o objeto fique ligeiramente
+    // menor do que a área total de 35%, evitando bater no topo.
+    const reservedWorldHeight = fullWorldHeight * 0.28;
+    const targetExtent = reservedWorldHeight * 1.2;
     return targetExtent / maxShapeExtentY;
   }, [isMobile, camera, cameraDistance, maxShapeExtentY]);
 
-  // Posição Y calculada pra centralizar o grupo no meio da faixa dos 20%
-  // (fractionFromTop = 0.10 = 10% do topo = centro da faixa de 0-20%).
   const mobileBaseY = useMemo(() => {
     if (!isMobile) return 0.5;
-    return worldYForScreenFraction(camera, 0.17, cameraDistance);
+
+    // o 3D no meio da sua nova zona limite sem encostar em cima.
+    return worldYForScreenFraction(camera, 0.191, cameraDistance);
   }, [isMobile, camera, cameraDistance, size]);
 
   const pointsRef = useRef();
