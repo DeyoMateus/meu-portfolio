@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 export default function ProjectsGallery({
   projects = [],
   categoryTitle = "Projetos em Destaque",
-  onSelectProject, // <-- Prop adicionada para receber a função do App.jsx
+  onSelectProject,
 }) {
   const carouselRef = useRef(null);
 

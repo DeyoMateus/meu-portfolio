@@ -103,10 +103,10 @@ export default function ParticleCanvas() {
       const ctx = canvas.getContext("2d");
 
       const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 60);
-      grad.addColorStop(0, "rgba(255, 255, 255, 1)"); // Núcleo hiper-brilhante
-      grad.addColorStop(0.18, "rgba(255, 245, 210, 0.95)"); // Transição do núcleo
-      grad.addColorStop(0.5, "rgba(255, 180, 50, 0.35)"); // Aura externa suave
-      grad.addColorStop(1, "rgba(0, 0, 0, 0)"); // Desvanecimento
+      grad.addColorStop(0, "rgba(255, 255, 255, 1)");
+      grad.addColorStop(0.18, "rgba(255, 245, 210, 0.95)");
+      grad.addColorStop(0.5, "rgba(255, 180, 50, 0.35)");
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(64, 64, 60, 0, Math.PI * 2);
@@ -150,10 +150,12 @@ export default function ParticleCanvas() {
     const cAmber = new THREE.Color(0xd47a15);
     const cDarkBlue = new THREE.Color(0x111c3a);
 
+    const isMobileDevice = window.innerWidth <= 768;
+
     // ==========================================
-    // 2. PARTÍCULAS AMBIENTES (PROFUNDIDADE 3D + AURA PULSANTE)
+    // 2. PARTÍCULAS AMBIENTES (VELOCIDADE REDUZIDA)
     // ==========================================
-    const NODE_COUNT = 280;
+    const NODE_COUNT = isMobileDevice ? 90 : 300;
     const nodePositions = new Float32Array(NODE_COUNT * 3);
     const nodeColors = new Float32Array(NODE_COUNT * 3);
     const nodeAlphas = new Float32Array(NODE_COUNT);
@@ -161,8 +163,7 @@ export default function ParticleCanvas() {
     const nodeVelocities = [];
 
     for (let i = 0; i < NODE_COUNT; i++) {
-      const z = (Math.random() - 0.5) * 32 - 4; // Distribuição profunda no eixo Z (-20 a +12)
-      // Fator de camada de profundidade (0.1 = fundo distante, 1.0 = primeiro plano)
+      const z = (Math.random() - 0.5) * 32 - 4;
       const depthFactor = Math.max(0.15, (z + 20) / 32);
 
       nodePositions[i * 3] = (Math.random() - 0.5) * 60;
@@ -179,9 +180,9 @@ export default function ParticleCanvas() {
 
       nodeVelocities.push({
         phaseY: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.8 + Math.random() * 1.2, // Pulso lento e hipnótico
-        speedY: (0.0004 + Math.random() * 0.0006) * depthFactor,
-        baseSpeedX: (-0.0025 - Math.random() * 0.002) * depthFactor,
+        pulseSpeed: 0.4 + Math.random() * 0.6,
+        speedY: (0.0002 + Math.random() * 0.0003) * depthFactor,
+        baseSpeedX: (-0.00125 - Math.random() * 0.001) * depthFactor,
         depthFactor,
         baseSize,
       });
@@ -217,8 +218,7 @@ export default function ParticleCanvas() {
     const nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
     scene.add(nodePoints);
 
-    // --- CAUDA DAS PARTÍCULAS (20% MAIOR NO SCROLL) ---
-    const DOTS_PER_TAIL = 28;
+    const DOTS_PER_TAIL = isMobileDevice ? 12 : 28;
     const TOTAL_TAIL_POINTS = NODE_COUNT * DOTS_PER_TAIL;
 
     const tailPositions = new Float32Array(TOTAL_TAIL_POINTS * 3);
@@ -262,11 +262,11 @@ export default function ParticleCanvas() {
     scene.add(tailPoints);
 
     // ==========================================
-    // 3. ESTRELAS CADENTES (COMETAS AFINADOS)
+    // 3. ESTRELAS CADENTES (COMETAS LENTOS)
     // ==========================================
-    const COMET_COUNT = 12;
+    const COMET_COUNT = isMobileDevice ? 4 : 7;
     const comets = [];
-    const COMET_TAIL_DOTS = 90;
+    const COMET_TAIL_DOTS = isMobileDevice ? 35 : 90;
 
     for (let c = 0; c < COMET_COUNT; c++) {
       const headGeo = new THREE.BufferGeometry();
@@ -348,8 +348,8 @@ export default function ParticleCanvas() {
       const deltaY = currentScrollY - lastScrollY;
       lastScrollY = currentScrollY;
 
-      if (deltaY > 0) targetSpeedModifier = 0.095;
-      else if (deltaY < 0) targetSpeedModifier = -0.095;
+      if (deltaY > 0) targetSpeedModifier = 0.1;
+      else if (deltaY < 0) targetSpeedModifier = -0.1;
 
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
@@ -361,7 +361,7 @@ export default function ParticleCanvas() {
     window.addEventListener(
       "wheel",
       (e) => {
-        targetSpeedModifier = Math.sign(e.deltaY) * 0.095;
+        targetSpeedModifier = Math.sign(e.deltaY) * 0.1;
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
           targetSpeedModifier = 0;
@@ -378,26 +378,45 @@ export default function ParticleCanvas() {
     const X_BOUNDS = 30;
     const tmpColor = new THREE.Color();
 
+    let isTabVisible = !document.hidden;
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+      if (!isTabVisible) {
+        cancelAnimationFrame(animationFrameId);
+      } else {
+        clock.getDelta(); // Limpa o acumulado do relógio
+        const currentTime = clock.getElapsedTime();
+
+        // Reseta completamente os cometas ao voltar para evitar estados corrompidos
+        comets.forEach((cObj, idx) => {
+          cObj.active = false;
+          cObj.headMat.opacity = 0;
+          cObj.tailMat.uniforms.globalOpacity.value = 0;
+          cObj.lastSpawn = currentTime + idx * 4.0; // Espaça o reaparecimento de forma limpa
+        });
+
+        animate();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     function animate() {
+      if (!isTabVisible) return;
       animationFrameId = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
 
-      // Parallax do Mouse
       camera.position.x += (mouse.targetX - camera.position.x) * 0.04;
       camera.position.y += (mouse.targetY - camera.position.y) * 0.04;
       camera.lookAt(0, 0, 0);
 
-      // Suavização do Scroll
       currentSpeedModifier +=
         (targetSpeedModifier - currentSpeedModifier) * 0.08;
       const scrollIntensity = Math.abs(currentSpeedModifier);
       const isScrolling = scrollIntensity > 0.005;
 
-      // Cauda 20% maior no valor máximo (Aumentado de 0.55 para 0.66)
-      const MAX_TAIL_LENGTH = 0.66;
+      const MAX_TAIL_LENGTH = 0.25;
       const baseTailLength = Math.min(scrollIntensity * 3.6, MAX_TAIL_LENGTH);
 
-      // Opacidade responsiva ao movimento
       tailMaterial.uniforms.globalOpacity.value = Math.min(
         1.0,
         scrollIntensity * 7.5,
@@ -418,7 +437,6 @@ export default function ParticleCanvas() {
       for (let i = 0; i < NODE_COUNT; i++) {
         const vel = nodeVelocities[i];
 
-        // Efeito Parallax de Velocidade conforme a profundidade
         const moveX =
           (vel.baseSpeedX + currentSpeedModifier) *
           (0.6 + vel.depthFactor * 0.8);
@@ -426,7 +444,6 @@ export default function ParticleCanvas() {
         nPos[i * 3] += moveX;
         nPos[i * 3 + 1] += Math.sin(time + vel.phaseY) * vel.speedY;
 
-        // Reposição contínua no espaço 3D
         if (nPos[i * 3] < -X_BOUNDS) {
           nPos[i * 3] = X_BOUNDS;
           nPos[i * 3 + 1] = (Math.random() - 0.5) * 28;
@@ -435,15 +452,11 @@ export default function ParticleCanvas() {
           nPos[i * 3 + 1] = (Math.random() - 0.5) * 28;
         }
 
-        // --- MICRO PULSAR (AURA EXPONENCIAL + NÚCLEO ILUMINADO) ---
-        // Onda de pulsação normalizada (0.0 a 1.0)
         const pulse = Math.sin(time * vel.pulseSpeed + vel.phaseY) * 0.5 + 0.5;
 
-        // Aura expande em tamanho
         nSiz[i] = vel.baseSize * (1.0 + 0.5 * pulse);
 
-        // Quando a aura alcança seu pico de pulso, o núcleo fica mais brilhante e branco
-        const coreBrilliance = Math.pow(pulse, 2.0); // Curva mais acentuada de pico
+        const coreBrilliance = Math.pow(pulse, 2.0);
         tmpColor.lerpColors(cGold, cWhite, coreBrilliance * 0.85);
 
         nCol[i * 3] = tmpColor.r;
@@ -451,9 +464,7 @@ export default function ParticleCanvas() {
         nCol[i * 3 + 2] = tmpColor.b;
         nAlp[i] = (0.65 + 0.35 * pulse) * (0.7 + vel.depthFactor * 0.3);
 
-        // --- CAUDA DAS PARTÍCULAS (ANIMAÇÃO DE VIAGEM INTERESTELAR) ---
         const tailDir = moveX > 0 ? -1 : 1;
-        // O comprimento da cauda escala com a profundidade da partícula
         const particleTailLength =
           baseTailLength * (0.5 + vel.depthFactor * 0.7);
 
@@ -469,7 +480,6 @@ export default function ParticleCanvas() {
           tPos[tailIdx * 3 + 1] = nPos[i * 3 + 1] + jitterY;
           tPos[tailIdx * 3 + 2] = nPos[i * 3 + 2] + jitterZ;
 
-          // Gradiente cromático espacial da cauda
           if (t < 0.2) tmpColor.lerpColors(cWhite, cGold, t / 0.2);
           else if (t < 0.65)
             tmpColor.lerpColors(cGold, cAmber, (t - 0.2) / 0.45);
@@ -497,10 +507,10 @@ export default function ParticleCanvas() {
       tailGeometry.attributes.customAlpha.needsUpdate = true;
       tailGeometry.attributes.size.needsUpdate = true;
 
-      // --- ESTRELAS CADENTES (COMETAS) ---
+      // --- ESTRELAS CADENTES (COMETAS LENTOS) ---
       comets.forEach((cObj, idx) => {
         if (
-          time - cObj.lastSpawn > 6.0 + idx * 4.0 &&
+          time - cObj.lastSpawn > 8.0 + idx * 4.0 &&
           !cObj.active &&
           !isScrolling
         ) {
@@ -511,10 +521,10 @@ export default function ParticleCanvas() {
             (Math.random() - 0.5) * 16,
             (Math.random() - 0.5) * 8,
           );
-          const speed = 0.18 + Math.random() * 0.04;
-          const angle = (Math.random() - 0.5) * (Math.PI / 5); // até ~18° pra cima ou pra baixo
+          const speed = 0.17 + Math.random() * 0.06;
+          const angle = (Math.random() - 0.5) * (Math.PI / 5);
           cObj.velocity.set(
-            -Math.cos(angle) * speed, // sempre negativo -> mantém a mesma direção
+            -Math.cos(angle) * speed,
             Math.sin(angle) * speed,
             0,
           );
@@ -536,9 +546,6 @@ export default function ParticleCanvas() {
           hPos[2] = cObj.pos.z;
           cObj.headMesh.geometry.attributes.position.needsUpdate = true;
 
-          // Direção normalizada do movimento: a cauda sempre aponta pro lado
-          // OPOSTO de onde o cometa está indo. Com isso, quando o ângulo muda,
-          // a cauda inclina junto — não fica mais presa à horizontal.
           const speed = cObj.velocity.length();
           const dirX = cObj.velocity.x / speed;
           const dirY = cObj.velocity.y / speed;
@@ -582,10 +589,14 @@ export default function ParticleCanvas() {
 
     animate();
 
+    let resizeTimeout;
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }, 120);
     };
     window.addEventListener("resize", handleResize);
 
@@ -593,6 +604,8 @@ export default function ParticleCanvas() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearTimeout(resizeTimeout);
       cancelAnimationFrame(animationFrameId);
 
       if (currentMount && renderer.domElement) {
@@ -607,6 +620,13 @@ export default function ParticleCanvas() {
       nodeMaterial.dispose();
       tailGeometry.dispose();
       tailMaterial.dispose();
+
+      comets.forEach((cObj) => {
+        cObj.headMesh.geometry.dispose();
+        cObj.headMat.dispose();
+        cObj.tailGeo.dispose();
+        cObj.tailMat.dispose();
+      });
     };
   }, []);
 

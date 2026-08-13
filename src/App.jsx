@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Canvas } from "@react-three/fiber";
-
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import ParticleField from "./components/ParticleField";
 import ProjectsGallery from "./components/ProjectsGallery";
 import ProjectModal from "./components/ProjectModal";
@@ -12,13 +12,17 @@ import Navbar from "./components/Navbar";
 import { projectsData } from "./data/projects";
 import ParticleCanvas from "./components/ParticleCanvas";
 import { useTiltEffect } from "./hooks/useTiltEffect";
+import { useIsMobile } from "./hooks/useIsMobile";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 export default function App() {
   const containerRef = useRef(null);
   const trackRef = useRef(null);
   const scrollProgress = useRef(0);
+  const isMobile = useIsMobile(768);
 
   const [progressState, setProgressState] = useState(0);
   const [activePanel, setActivePanel] = useState(0);
@@ -85,18 +89,21 @@ export default function App() {
       // Só o Painel 01 ganha aquela entrada bonita com stagger ao
       // carregar a página (os outros começam invisíveis, esperando
       // o scroll trazê-los).
-      gsap.fromTo(
-        allPanels[0].els,
-        { y: 30, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          stagger: 0.08,
-          delay: 0.1,
-          ease: "power2.out",
-        },
-      );
+      if (allPanels[0] && allPanels[0].els.length > 0) {
+        gsap.fromTo(
+          allPanels[0].els,
+          { y: 20, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.08,
+            delay: 0.1,
+            ease: "power2.out",
+            clearProps: "all",
+          },
+        );
+      }
 
       const clamp01 = gsap.utils.clamp(0, 1);
       const mapRange = (value, inMin, inMax, outMin, outMax) => {
@@ -104,30 +111,18 @@ export default function App() {
         return outMin + (outMax - outMin) * t;
       };
 
-      /**
-       * Cada painel tem seu "p" (0 a 1) representando sua posição dentro do
-       * percurso do scroll horizontal. A janela de visibilidade continua
-       * sendo p ∈ [0.25, 0.75] — isso garante que a janela de um painel
-       * termina exatamente onde a do próximo começa, sem sobreposição.
-       *
-       * Dentro dessa janela agora tem 3 fases (só opacidade, sem mover
-       * y/x nunca mais):
-       *   1. FADE IN  — de p=0.25 até p=0.40: opacidade 0 -> 1
-       *   2. PLATÔ    — de p=0.40 até p=0.60: opacidade travada em 1
-       *                 (esse é o "ponto de equilíbrio" que você pediu pra
-       *                 aumentar — antes era só um instante, agora é uma
-       *                 faixa de 0.20, quase metade da janela toda)
-       *   3. FADE OUT — de p=0.60 até p=0.75: opacidade 1 -> 0
-       */
       function updatePanelTransforms(targets) {
         const width = window.innerWidth;
         const viewportCenter = width / 2;
-
-        // 1. Ampliamos levemente a janela geral do Platô para todos os painéis
         const PLATEAU_START = 0.35;
         const PLATEAU_END = 0.65;
 
-        targets.forEach(({ panel, els }) => {
+        // Resgatamos o progresso geral do scroll (de 0 a 1) para usar como trava
+        const currentProg = scrollProgress.current;
+
+        // --- PASSO 1: apenas LEITURAS de layout ---
+        // Passamos o 'index' no map para identificar exatamente qual é o painel
+        const writes = targets.map(({ panel, els }, index) => {
           const rect = panel.getBoundingClientRect();
           const panelCenter = rect.left + rect.width / 2;
 
@@ -142,52 +137,76 @@ export default function App() {
           );
 
           let opacity;
-
-          if (p <= 0.25 || p >= 0.75) {
+          if (p <= 0.15 || p >= 0.85) {
             opacity = 0;
           } else if (p < PLATEAU_START) {
-            opacity = mapRange(p, 0.25, PLATEAU_START, 0, 1);
+            opacity = mapRange(p, 0.15, PLATEAU_START, 0, 1);
           } else if (p <= PLATEAU_END) {
-            opacity = 1; // platô
+            opacity = 1;
           } else {
-            opacity = mapRange(p, PLATEAU_END, 0.75, 1, 0);
+            opacity = mapRange(p, PLATEAU_END, 0.85, 1, 0);
           }
 
-          // 2. REGRA DE OURO EXCLUSIVA PARA O PAINEL 01:
-          // Forçamos a opacidade 100% em uma área muito maior no retorno.
-          // Isso impede que ele escureça ao "passar do ponto" no topo e
-          // garante que ele acenda bem antes de precisar procurar o ponto de ativação.
-          if (panel === allPanels[0].panel) {
-            if (p < 0.68) {
-              opacity = 1; // Brilho máximo garantido
+          // --- NOVA TRAVA DE SEGURANÇA PARA EXTREMIDADES ---
+          const isFirstPanel = index === 0;
+          const isLastPanel = index === targets.length - 1;
+
+          if (isFirstPanel && currentProg <= 0.05) {
+            // Se o scroll está grudado no topo, crava o painel 01 em 100% visível
+            opacity = 1;
+          } else if (isLastPanel && currentProg >= 0.95) {
+            // Se o scroll bateu no final, crava o último painel em 100% visível
+            opacity = 1;
+          } else if (isFirstPanel) {
+            // Mantém o ajuste fino antigo para o Painel 01 apenas quando ele estiver rolando no meio do caminho
+            const distFromRest = Math.abs(p - 0.5);
+            if (distFromRest < 0.18) {
+              opacity = 1;
+            } else if (distFromRest < 0.35) {
+              opacity = mapRange(distFromRest, 0.18, 0.35, 1, 0);
             } else {
-              opacity = mapRange(p, 0.68, 0.75, 1, 0); // Fade out apenas na saída
+              opacity = 0;
             }
           }
 
+          return { els, opacity };
+        });
+
+        // --- PASSO 2: apenas ESCRITAS de estilo ---
+        writes.forEach(({ els, opacity }) => {
+          gsap.killTweensOf(els, "opacity");
           gsap.set(els, { opacity });
         });
       }
+
       const horizontalTween = gsap.to(track, {
         x: () => -(track.scrollWidth - window.innerWidth),
         ease: "none",
         scrollTrigger: {
           trigger: containerRef.current,
           pin: true,
-          scrub: 0.8,
+
+          scrub: 0.4,
+
+          anticipatePin: 1,
           start: "top top",
           end: () => `+=${track.scrollWidth - window.innerWidth}`,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             const prog = self.progress;
             scrollProgress.current = prog;
-            setProgressState(prog);
 
-            const currentIndex = Math.min(
-              Math.floor(prog * totalPanels),
-              totalPanels - 1,
+            // 1. Evita lag cortando os re-renders excessivos do React
+            const roundedProg = Math.round(prog * 100) / 100;
+            setProgressState((prev) =>
+              prev !== roundedProg ? roundedProg : prev,
             );
-            setActivePanel(currentIndex);
+
+            // 2. Corrige a matemática da bolinha ativa no menu
+            const currentIndex = Math.round(prog * (totalPanels - 1));
+            setActivePanel((prev) =>
+              prev !== currentIndex ? currentIndex : prev,
+            );
 
             updatePanelTransforms(allPanels);
           },
@@ -200,6 +219,10 @@ export default function App() {
       updatePanelTransforms(allPanels.slice(1));
 
       ScrollTrigger.refresh();
+
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 100);
     },
     { scope: containerRef },
   );
@@ -212,9 +235,12 @@ export default function App() {
     const maxScroll = track.scrollWidth - window.innerWidth;
     const targetScroll = (index / (totalPanels - 1)) * maxScroll;
 
-    window.scrollTo({
-      top: targetScroll,
-      behavior: "smooth",
+    // Usamos o GSAP para suavizar o scroll do clique, eliminando o comportamento de "voar"
+    gsap.to(window, {
+      scrollTo: targetScroll,
+      duration: 1.2, // Tempo em segundos para a transição do clique
+      ease: "power2.out",
+      overwrite: "auto", // Impede conflitos caso o usuário clique em outro botão no meio do caminho
     });
   };
 
@@ -228,10 +254,21 @@ export default function App() {
         progress={progressState}
       />
 
+      {/*
+
+      */}
       <div id="canvas-container">
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={[1, 1.5]}
+          dpr={[
+            1,
+            isMobile
+              ? 1.5
+              : Math.min(
+                  typeof window !== "undefined" ? window.devicePixelRatio : 1,
+                  2,
+                ),
+          ]}
           gl={{ powerPreference: "high-performance", antialias: false }}
         >
           <ambientLight intensity={1} />

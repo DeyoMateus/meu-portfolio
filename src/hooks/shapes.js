@@ -1,5 +1,13 @@
-export const POINTS_PER_SHAPE = 1500;
+export const DESKTOP_POINTS_PER_SHAPE = 1300;
+
+export const MOBILE_POINTS_PER_SHAPE = 810;
+// Mantido por compatibilidade com quem ainda importa o nome antigo.
+export const POINTS_PER_SHAPE = DESKTOP_POINTS_PER_SHAPE;
 export const V_POINTS_COUNT = 300;
+
+export function getPointsPerShape(isMobile) {
+  return isMobile ? MOBILE_POINTS_PER_SHAPE : DESKTOP_POINTS_PER_SHAPE;
+}
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
@@ -16,7 +24,7 @@ function createSeededRandom(seed) {
 
 // 1. LOGO FVF (Restaurada como estava antes)
 function generateLogoPositions(count) {
-  const random = createSeededRandom(1337); // Semente fixa para nunca mudar
+  const random = createSeededRandom(1337);
   const pos = new Float32Array(count * 3);
 
   const allSegments = [
@@ -304,37 +312,106 @@ function generateDiamondPositions(count) {
   return { positions: pos, segIds };
 }
 
+// ==========================================================================
+// OTIMIZAÇÃO (Problema 2.2 — o maior gargalo de CPU do projeto):
+// Os 3 builders de arestas abaixo faziam uma varredura O(n²) — comparando
+// CADA ponto com TODOS os outros (1500 x 1500 = 1.125.000 pares só nesta
+// forma, x5 formas = ~5,6 milhões de operações, síncrono, no main thread,
+// toda vez que o componente montava OU que `isMobile` mudava).
+//
+// A troca abaixo é um "spatial hashing" / grid uniforme: cada ponto só é
+// comparado com pontos que caem na mesma célula do grid (tamanho = maxDist)
+// ou em células vizinhas. Como só pontos próximos podem formar aresta de
+// qualquer forma, isso elimina ~99% das comparações desnecessárias e reduz
+// a complexidade de O(n²) para ~O(n) na prática — sem mudar o resultado
+// visual (mesmo critério de distância, mesmas regras de segId).
+// ==========================================================================
+function buildSpatialGrid(pos, cellSize) {
+  const totalPoints = pos.length / 3;
+  const grid = new Map();
+  const keyOf = (cx, cy, cz) => `${cx}_${cy}_${cz}`;
+
+  for (let i = 0; i < totalPoints; i++) {
+    const cx = Math.floor(pos[i * 3] / cellSize);
+    const cy = Math.floor(pos[i * 3 + 1] / cellSize);
+    const cz = Math.floor(pos[i * 3 + 2] / cellSize);
+    const key = keyOf(cx, cy, cz);
+    let bucket = grid.get(key);
+    if (!bucket) {
+      bucket = [];
+      grid.set(key, bucket);
+    }
+    bucket.push(i);
+  }
+
+  return { grid, keyOf };
+}
+
+// Percorre apenas as 27 células vizinhas (3x3x3) ao redor de cada ponto,
+// aplica o callback(i, j, distSq) só para pares candidatos próximos.
+function forEachNearbyPair(pos, maxDist, onPair) {
+  const totalPoints = pos.length / 3;
+  const cellSize = maxDist; // células do tamanho do raio de busca
+  const { grid, keyOf } = buildSpatialGrid(pos, cellSize);
+  const maxDistSq = maxDist * maxDist;
+
+  for (let i = 0; i < totalPoints; i++) {
+    const cx = Math.floor(pos[i * 3] / cellSize);
+    const cy = Math.floor(pos[i * 3 + 1] / cellSize);
+    const cz = Math.floor(pos[i * 3 + 2] / cellSize);
+
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const bucket = grid.get(keyOf(cx + dx, cy + dy, cz + dz));
+          if (!bucket) continue;
+          for (let bi = 0; bi < bucket.length; bi++) {
+            const j = bucket[bi];
+            if (j <= i) continue; // evita pares duplicados e auto-comparação
+            const ddx = pos[i * 3] - pos[j * 3];
+            const ddy = pos[i * 3 + 1] - pos[j * 3 + 1];
+            const ddz = pos[i * 3 + 2] - pos[j * 3 + 2];
+            const distSq = ddx * ddx + ddy * ddy + ddz * ddz;
+            if (distSq < maxDistSq) onPair(i, j);
+          }
+        }
+      }
+    }
+  }
+}
+
 function buildEdgesForDiamond(
   pos,
   segIds,
   maxDistEdge = 0.32,
   maxDistFill = 0.22,
 ) {
-  const indices = [];
   const totalPoints = pos.length / 3;
-
   let fillSegId = 0;
   for (let i = 0; i < totalPoints; i++) {
     if (segIds[i] > fillSegId) fillSegId = segIds[i];
   }
 
-  for (let i = 0; i < totalPoints; i++) {
-    for (let j = i + 1; j < totalPoints; j++) {
-      const segI = segIds[i];
-      const segJ = segIds[j];
+  const indices = [];
+  // Usamos o maior raio entre edge/fill como tamanho de célula, garantindo
+  // que nenhum par válido fique fora do alcance das 27 células vizinhas.
+  const searchRadius = Math.max(maxDistEdge, maxDistFill);
 
-      if (segI < fillSegId && segJ < fillSegId && segI !== segJ) continue;
+  forEachNearbyPair(pos, searchRadius, (i, j) => {
+    const segI = segIds[i];
+    const segJ = segIds[j];
+    if (segI < fillSegId && segJ < fillSegId && segI !== segJ) return;
 
-      const dx = pos[i * 3] - pos[j * 3];
-      const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-      const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-      const dist = Math.hypot(dx, dy, dz);
-      const limitDist =
-        segI === fillSegId || segJ === fillSegId ? maxDistFill : maxDistEdge;
+    const dx = pos[i * 3] - pos[j * 3];
+    const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+    const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+    const dist = Math.hypot(dx, dy, dz);
+    const limitDist =
+      segI === fillSegId || segJ === fillSegId ? maxDistFill : maxDistEdge;
 
-      if (dist < limitDist) indices.push(i, j);
-    }
-  }
+    if (dist < limitDist) indices.push(i, j);
+  });
+
   return new Uint16Array(indices);
 }
 
@@ -481,48 +558,42 @@ function buildEdgesForEnvelope(
   maxDistFill = 0.22,
 ) {
   const indices = [];
-  const totalPoints = pos.length / 3;
+  const searchRadius = Math.max(maxDistEdge, maxDistFill);
 
-  for (let i = 0; i < totalPoints; i++) {
-    for (let j = i + 1; j < totalPoints; j++) {
-      const segI = segIds[i];
-      const segJ = segIds[j];
+  forEachNearbyPair(pos, searchRadius, (i, j) => {
+    const segI = segIds[i];
+    const segJ = segIds[j];
+    if (segI < 6 && segJ < 6 && segI !== segJ) return;
 
-      if (segI < 6 && segJ < 6 && segI !== segJ) continue;
+    const dx = pos[i * 3] - pos[j * 3];
+    const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+    const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+    const dist = Math.hypot(dx, dy, dz);
+    const limitDist = segI === 6 || segJ === 6 ? maxDistFill : maxDistEdge;
 
-      const dx = pos[i * 3] - pos[j * 3];
-      const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-      const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-      const dist = Math.hypot(dx, dy, dz);
-      const limitDist = segI === 6 || segJ === 6 ? maxDistFill : maxDistEdge;
+    if (dist < limitDist) indices.push(i, j);
+  });
 
-      if (dist < limitDist) indices.push(i, j);
-    }
-  }
   return new Uint16Array(indices);
 }
 
 function buildEdgesForShape(pos, maxDist = 0.4) {
   const indices = [];
-  const totalPoints = pos.length / 3;
-
-  for (let i = 0; i < totalPoints; i++) {
-    for (let j = i + 1; j < totalPoints; j++) {
-      const dx = pos[i * 3] - pos[j * 3];
-      const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-      const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-
-      if (Math.hypot(dx, dy, dz) < maxDist) indices.push(i, j);
-    }
-  }
+  forEachNearbyPair(pos, maxDist, (i, j) => {
+    indices.push(i, j);
+  });
   return new Uint16Array(indices);
 }
 
-export function buildAllShapes() {
-  const shape1 = generateLogoPositions(POINTS_PER_SHAPE);
+// OTIMIZAÇÃO (Problema 2.2): buildAllShapes agora recebe `count`.
+// Quem chama (ParticleField.jsx) decide 1500 (desktop) ou 550 (mobile) via
+// getPointsPerShape(isMobile). Menos pontos = menos células no grid, menos
+// updates de posição por frame, e edges muito mais rápidas de construir.
+export function buildAllShapes(count = DESKTOP_POINTS_PER_SHAPE) {
+  const shape1 = generateLogoPositions(count);
   const edge1 = buildEdgesForShape(shape1, 0.42);
 
-  const diamondData = generateDiamondPositions(POINTS_PER_SHAPE);
+  const diamondData = generateDiamondPositions(count);
   const shape2 = diamondData.positions;
   const edge2 = buildEdgesForDiamond(
     diamondData.positions,
@@ -531,13 +602,13 @@ export function buildAllShapes() {
     0.22,
   );
 
-  const shape3 = generateSpherePositions(POINTS_PER_SHAPE);
+  const shape3 = generateSpherePositions(count);
   const edge3 = buildEdgesForShape(shape3, 0.45);
 
-  const shape4 = generateInfinityPositions(POINTS_PER_SHAPE);
+  const shape4 = generateInfinityPositions(count);
   const edge4 = buildEdgesForShape(shape4, 0.35);
 
-  const envelopeData = generateEnvelopePositions(POINTS_PER_SHAPE);
+  const envelopeData = generateEnvelopePositions(count);
   const shape5 = envelopeData.positions;
   const edge5 = buildEdgesForEnvelope(
     envelopeData.positions,
@@ -549,5 +620,6 @@ export function buildAllShapes() {
   return {
     shapes: [shape1, shape2, shape3, shape4, shape5],
     edges: [edge1, edge2, edge3, edge4, edge5],
+    pointsPerShape: count,
   };
 }

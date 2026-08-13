@@ -218,41 +218,21 @@ export default function ProjectModal({ project, onClose }) {
         </div>
       </div>
 
-      {/* LIGHTBOX (TELA CHEIA COM AS SETAS DE NAVEGAÇÃO) */}
+      {/* LIGHTBOX (TELA CHEIA COM AS SETAS AO LADO DA FOTO) */}
       {expandedImageIndex !== null && (
         <div
+          className="modal-lightbox-overlay"
           onClick={() => setExpandedImageIndex(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.95)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 99999,
-            cursor: "zoom-out",
-          }}
         >
           {/* Botão fechar */}
           <button
+            className="modal-lightbox-close"
             onClick={() => setExpandedImageIndex(null)}
-            style={{
-              position: "absolute",
-              top: "24px",
-              right: "24px",
-              background: "none",
-              border: "none",
-              color: "white",
-              cursor: "pointer",
-              zIndex: 100,
-            }}
+            aria-label="Fechar Lightbox"
           >
             <svg
-              width="32"
-              height="32"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -266,69 +246,65 @@ export default function ProjectModal({ project, onClose }) {
             </svg>
           </button>
 
-          {/* Seta Esquerda (Apenas no Lightbox, se houver mais de 1 imagem) */}
-          {images.length > 1 && (
-            <button
-              onClick={handlePrev}
-              style={{
-                position: "absolute",
-                left: "24px",
-                background: "rgba(255, 255, 255, 0.2)",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "48px",
-                height: "48px",
-                fontSize: "24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 100,
-              }}
-            >
-              ‹
-            </button>
-          )}
-
-          {/* Imagem Atual Expandida */}
-          <img
-            src={images[expandedImageIndex]}
-            alt="Expandida"
+          <div
+            className="modal-lightbox-content"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "85%",
-              maxHeight: "85%",
-              objectFit: "contain",
-              borderRadius: "8px",
-              cursor: "default",
-            }}
-          />
+          >
+            {/* Seta Esquerda */}
+            {images.length > 1 && (
+              <button
+                onClick={handlePrev}
+                aria-label="Imagem anterior"
+                className="modal-lightbox-btn"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
 
-          {/* Seta Direita (Apenas no Lightbox, se houver mais de 1 imagem) */}
-          {images.length > 1 && (
-            <button
-              onClick={handleNext}
-              style={{
-                position: "absolute",
-                right: "24px",
-                background: "rgba(255, 255, 255, 0.2)",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "48px",
-                height: "48px",
-                fontSize: "24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 100,
-              }}
-            >
-              ›
-            </button>
-          )}
+            {/* Imagem Atual Expandida */}
+            <img
+              src={images[expandedImageIndex]}
+              alt={`${project.title} - Imagem expandida ${expandedImageIndex + 1}`}
+              className="modal-lightbox-img"
+            />
+
+            {/* Seta Direita */}
+            {images.length > 1 && (
+              <button
+                onClick={handleNext}
+                aria-label="Próxima imagem"
+                className="modal-lightbox-btn"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </>

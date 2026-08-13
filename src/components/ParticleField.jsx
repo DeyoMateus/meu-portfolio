@@ -1,11 +1,21 @@
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { buildAllShapes, POINTS_PER_SHAPE } from "../hooks/shapes";
+import { buildAllShapes, getPointsPerShape } from "../hooks/shapes";
 import { useIsMobile, useResponsiveScale } from "../hooks/useIsMobile";
 
 const GOLD = new THREE.Color("#ffe27a");
 const WHITE = new THREE.Color("#ffffff");
+
+function getWorldViewportHeight(camera, distance) {
+  const vFOV = THREE.MathUtils.degToRad(camera.fov);
+  return 2 * Math.tan(vFOV / 2) * distance;
+}
+
+function worldYForScreenFraction(camera, fractionFromTop, distance) {
+  const fullHeight = getWorldViewportHeight(camera, distance);
+  return (fullHeight / 2) * (1 - 2 * fractionFromTop);
+}
 
 function useParticleTexture() {
   return useMemo(() => {
@@ -33,36 +43,68 @@ function useParticleTexture() {
 }
 
 export default function ParticleField({ scrollProgress }) {
-  const isMobile = useIsMobile(768);
+  const isMobile = useIsMobile(1024);
   const responsiveScale = useResponsiveScale();
+  const { camera, size } = useThree();
+
+  const pointsPerShape = useMemo(() => getPointsPerShape(isMobile), [isMobile]);
 
   const { shapes, edges } = useMemo(() => {
-    return buildAllShapes();
-  }, [isMobile]);
+    return buildAllShapes(pointsPerShape);
+  }, [pointsPerShape]);
+
+  const maxShapeExtentY = useMemo(() => {
+    let maxAbsY = 0;
+    for (const shape of shapes) {
+      for (let i = 1; i < shape.length; i += 3) {
+        const ay = Math.abs(shape[i]);
+        if (ay > maxAbsY) maxAbsY = ay;
+      }
+    }
+    return maxAbsY > 0 ? maxAbsY * 2 : 1; // diâmetro vertical aproximado
+  }, [shapes]);
+
+  const cameraDistance = camera.position.z;
+
+  const mobileFitScale = useMemo(() => {
+    if (!isMobile) return null;
+    const fullWorldHeight = getWorldViewportHeight(camera, cameraDistance);
+    const reservedWorldHeight = fullWorldHeight * 0.38; // faixa dos 38%
+    const targetExtent = reservedWorldHeight * 0.6;
+    return targetExtent / maxShapeExtentY;
+  }, [isMobile, camera, cameraDistance, maxShapeExtentY]);
+
+  // Posição Y calculada pra centralizar o grupo no meio da faixa dos 20%
+  // (fractionFromTop = 0.10 = 10% do topo = centro da faixa de 0-20%).
+  const mobileBaseY = useMemo(() => {
+    if (!isMobile) return 0.5;
+    return worldYForScreenFraction(camera, 0.17, cameraDistance);
+  }, [isMobile, camera, cameraDistance, size]);
 
   const pointsRef = useRef();
   const groupRef = useRef();
   const linesARef = useRef();
   const linesBRef = useRef();
 
-  const [isMobileState, setIsMobileState] = useState(false);
-
   const current = useMemo(() => new Float32Array(shapes[0]), [shapes]);
 
   const colors = useMemo(() => {
-    const c = new Float32Array(POINTS_PER_SHAPE * 3);
-    for (let i = 0; i < POINTS_PER_SHAPE; i++) {
+    const c = new Float32Array(pointsPerShape * 3);
+    for (let i = 0; i < pointsPerShape; i++) {
       const mixAmt = (i % 5) / 5;
       const col = GOLD.clone().lerp(WHITE, mixAmt * 0.5);
       col.toArray(c, i * 3);
     }
     return c;
-  }, [shapes]);
+  }, [shapes, pointsPerShape]);
 
   const texture = useParticleTexture();
+  useEffect(() => {
+    return () => texture.dispose();
+  }, [texture]);
+
   const lastFloor = useRef(-1);
 
-  const { camera, size } = useThree();
   const mouseNDC = useRef(new THREE.Vector2(9999, 9999));
   const mouseWorld = useRef(new THREE.Vector3());
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
@@ -70,6 +112,7 @@ export default function ParticleField({ scrollProgress }) {
     () => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0),
     [],
   );
+  const raycastHit = useRef(new THREE.Vector3());
 
   const initialIndexA = useMemo(() => {
     return edges && edges[0] ? new THREE.BufferAttribute(edges[0], 1) : null;
@@ -83,10 +126,6 @@ export default function ParticleField({ scrollProgress }) {
   }, [edges]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobileState(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
     const onMove = (e) => {
       mouseNDC.current.x = (e.clientX / size.width) * 2 - 1;
       mouseNDC.current.y = -(e.clientY / size.height) * 2 + 1;
@@ -99,7 +138,6 @@ export default function ParticleField({ scrollProgress }) {
     window.addEventListener("pointerleave", onLeave);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerleave", onLeave);
     };
@@ -120,7 +158,8 @@ export default function ParticleField({ scrollProgress }) {
 
     if (!isMobile) {
       raycaster.setFromCamera(mouseNDC.current, camera);
-      const hit = new THREE.Vector3();
+
+      const hit = raycastHit.current;
       const didHit = raycaster.ray.intersectPlane(pickPlane, hit);
       if (didHit && groupRef.current) {
         groupRef.current.worldToLocal(hit);
@@ -134,7 +173,7 @@ export default function ParticleField({ scrollProgress }) {
     const REPEL_STRENGTH = 0.2;
     const isMouseActive = mouseNDC.current.x < 100;
 
-    for (let i = 0; i < POINTS_PER_SHAPE; i++) {
+    for (let i = 0; i < pointsPerShape; i++) {
       const ix = i * 3;
       const tx = shapeA[ix] + (shapeB[ix] - shapeA[ix]) * frac;
       const ty = shapeA[ix + 1] + (shapeB[ix + 1] - shapeA[ix + 1]) * frac;
@@ -163,15 +202,23 @@ export default function ParticleField({ scrollProgress }) {
       arr[ix + 1] = py;
       arr[ix + 2] = pz;
     }
+
     posAttr.needsUpdate = true;
 
     if (groupRef.current) {
-      // ZOOM na transição, agora combinado com a escala responsiva: em vez
-      // de um valor fixo (0.8 mobile / 1.25 desktop), baseScale vem do hook
-      // useResponsiveScale — encolhe gradualmente conforme a tela fica menor.
-      const baseScale = responsiveScale;
+      const width = window.innerWidth;
+      let extraScale = 1;
+      if (width >= 1280 && width < 1500) extraScale = 1.15;
+      if (width <= 1024 && width > 768) extraScale = 0.75;
+      if (width <= 768) extraScale = 0.6;
+
+      const baseScale = isMobile
+        ? (mobileFitScale || responsiveScale) * extraScale
+        : responsiveScale;
+
+      const pulseAmplitude = isMobile ? 0.12 : 0.4;
       const transitionPulse = Math.sin(frac * Math.PI);
-      const targetScale = baseScale * (1 + transitionPulse * 0.4);
+      const targetScale = baseScale * (1 + transitionPulse * pulseAmplitude);
       const nextScale = THREE.MathUtils.lerp(
         groupRef.current.scale.x,
         targetScale,
@@ -179,10 +226,10 @@ export default function ParticleField({ scrollProgress }) {
       );
       groupRef.current.scale.setScalar(nextScale);
 
-      const baseY = isMobile ? 2.5 : 0.1;
+      const baseY = isMobile ? mobileBaseY : 0.1;
       const baseX = isMobile ? 0 : 6.2;
 
-      const floatOffset = Math.sin(time * 1.5) * 0.15;
+      const floatOffset = Math.sin(time * 1.5) * 0.05;
 
       const targetX =
         isMouseActive && !isMobile ? baseX + mouseNDC.current.x * 0.5 : baseX;
@@ -255,8 +302,8 @@ export default function ParticleField({ scrollProgress }) {
   return (
     <group
       ref={groupRef}
-      position={isMobile ? [0, 2.5, 0] : [6.2, 0.1, 0]}
-      scale={responsiveScale}
+      position={isMobile ? [0, mobileBaseY, 0] : [6.2, 0.1, 0]}
+      scale={isMobile ? mobileFitScale || responsiveScale : responsiveScale}
     >
       <points ref={pointsRef}>
         <bufferGeometry>
@@ -264,7 +311,7 @@ export default function ParticleField({ scrollProgress }) {
           <bufferAttribute attach="attributes-color" args={[colors, 3]} />
         </bufferGeometry>
         <pointsMaterial
-          size={isMobile ? 0.08 : 0.12}
+          size={isMobile ? 0.06 : 0.12}
           map={texture}
           vertexColors
           transparent
