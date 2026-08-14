@@ -137,6 +137,30 @@ export default function ParticleCanvas() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     currentMount.appendChild(renderer.domElement);
 
+    // CORREÇÃO TELA BRANCA: sem preventDefault() aqui, se o navegador
+    // descartar o contexto WebGL por falta de memória de GPU, ele nunca
+    // tenta restaurar sozinho e o canvas fica branco/preto até dar F5.
+    const handleContextLost = (event) => {
+      event.preventDefault();
+      cancelAnimationFrame(animationFrameId);
+      console.warn("WebGL context perdido (ParticleCanvas), pausando loop.");
+    };
+    const handleContextRestored = () => {
+      console.warn("WebGL context restaurado (ParticleCanvas), retomando.");
+      clock.getDelta(); // descarta o tempo acumulado enquanto ficou perdido
+      animate();
+    };
+    renderer.domElement.addEventListener(
+      "webglcontextlost",
+      handleContextLost,
+      false,
+    );
+    renderer.domElement.addEventListener(
+      "webglcontextrestored",
+      handleContextRestored,
+      false,
+    );
+
     const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
     const handleMouseMove = (event) => {
       mouse.targetX = (event.clientX / window.innerWidth - 0.5) * 1.5;
@@ -605,6 +629,14 @@ export default function ParticleCanvas() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      renderer.domElement.removeEventListener(
+        "webglcontextlost",
+        handleContextLost,
+      );
+      renderer.domElement.removeEventListener(
+        "webglcontextrestored",
+        handleContextRestored,
+      );
       clearTimeout(resizeTimeout);
       cancelAnimationFrame(animationFrameId);
 

@@ -309,17 +309,22 @@ export default function App() {
 
   return (
     <>
-      {/* CORREÇÃO: Div container forçando as partículas customizadas a ficarem no fundo sem bloquear clique */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      >
-        <ParticleCanvas />
-      </div>
+      {/* CORREÇÃO: Div container forçando as partículas customizadas a ficarem no fundo sem bloquear clique.
+          Desligado no mobile/tablet: ter 2 WebGLRenderers simultâneos (este + o do
+          ParticleField) sobrecarrega a GPU em navegadores restritos (Android,
+          in-app browser do Facebook/Instagram) e pode causar perda de contexto WebGL. */}
+      {!isMobile && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        >
+          <ParticleCanvas />
+        </div>
+      )}
 
       <Navbar
         activePanel={activePanel}
@@ -346,6 +351,27 @@ export default function App() {
           gl={{ powerPreference: "high-performance", antialias: false }}
           eventSource={document.getElementById("root")} // Movido para o Canvas
           eventPrefix="client" // Movido para o Canvas
+          onCreated={({ gl }) => {
+            // CORREÇÃO TELA BRANCA: sem isso, ao perder o contexto WebGL
+            // (comum em navegadores restritos como Android/in-app do
+            // Facebook quando a GPU fica sem memória), o navegador NUNCA
+            // tenta restaurar o contexto e a tela fica branca pra sempre
+            // até dar F5. O preventDefault() permite a auto-restauração.
+            const canvasEl = gl.domElement;
+            const handleLost = (event) => {
+              event.preventDefault();
+              console.warn("WebGL context perdido, aguardando restauração...");
+            };
+            const handleRestored = () => {
+              console.warn("WebGL context restaurado.");
+            };
+            canvasEl.addEventListener("webglcontextlost", handleLost, false);
+            canvasEl.addEventListener(
+              "webglcontextrestored",
+              handleRestored,
+              false,
+            );
+          }}
         >
           <ambientLight intensity={1} />
           <ParticleField scrollProgress={scrollProgress} />
