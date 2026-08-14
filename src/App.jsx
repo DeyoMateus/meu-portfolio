@@ -94,11 +94,11 @@ export default function App() {
 
       const totalPanels = panels.length;
       const PANEL_SELECTOR = `
-          .section-tag, h1, .description, .tech-stack,
-          .projects-wrapper, .contact-container, .profile-card-container,
-          .profile-header, .profile-card-large, .profile-carousel-container,
-          .profile-dots-indicator
-        `;
+        .section-tag, h1, .description, .tech-stack,
+        .projects-wrapper, .contact-container, .profile-card-container,
+        .profile-header, .profile-card-large, .profile-carousel-container,
+        .profile-dots-indicator
+      `;
 
       const allPanels = panels.map((panel) => ({
         panel,
@@ -106,7 +106,7 @@ export default function App() {
       }));
 
       // ==========================================
-      // MOBILE / TABLET
+      // MOBILE / TABLET (Scroll Vertical)
       // ==========================================
       if (isMobile) {
         const wrapper = mobileScrollWrapperRef.current;
@@ -191,7 +191,7 @@ export default function App() {
       }
 
       // ==========================================
-      // DESKTOP
+      // DESKTOP (Scroll Horizontal Pin)
       // ==========================================
       const clamp01 = gsap.utils.clamp(0, 1);
 
@@ -244,8 +244,6 @@ export default function App() {
         horizontalTween.kill();
         ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
-        // CORREÇÃO: Resetar estilos para que os elementos não fiquem presos com "opacity: 0"
-        // ao redimensionar a tela ou transitar entre abas/resoluções.
         allPanels.forEach(({ els }) => {
           els.forEach((element) => {
             element.style.opacity = "";
@@ -271,7 +269,6 @@ export default function App() {
 
       const wrapperRect = wrapper.getBoundingClientRect();
       const panelRect = targetPanel.getBoundingClientRect();
-      // Compensa os 35% de área vazia 3D do mobile
       const topOffset = window.innerHeight * 0.35;
       const scrollTop =
         wrapper.scrollTop + (panelRect.top - wrapperRect.top) - topOffset;
@@ -283,22 +280,11 @@ export default function App() {
       return;
     }
 
-    // ==========================================
-    // CORREÇÃO: LÓGICA DE NAVEGAÇÃO DESKTOP
-    // ==========================================
-    // O número total de painéis é sempre 5
     const totalPanels = 5;
-
-    // Distância total que o ScrollTrigger precisa rolar para chegar ao fim
     const maxScroll = track.scrollWidth - window.innerWidth;
-
-    // Converte o índice do menu (0, 1, 2, 3, 4) em uma porcentagem (0, 0.25, 0.5, 0.75, 1)
     const progress = index / (totalPanels - 1);
-
-    // Transforma a porcentagem na quantidade de pixels que a janela precisa descer
     const scrollAmount = progress * maxScroll;
 
-    // Dispara a rolagem
     gsap.to(window, {
       scrollTo: { y: scrollAmount },
       duration: 1.2,
@@ -309,10 +295,7 @@ export default function App() {
 
   return (
     <>
-      {/* CORREÇÃO: Div container forçando as partículas customizadas a ficarem no fundo sem bloquear clique.
-          Desligado no mobile/tablet: ter 2 WebGLRenderers simultâneos (este + o do
-          ParticleField) sobrecarrega a GPU em navegadores restritos (Android,
-          in-app browser do Facebook/Instagram) e pode causar perda de contexto WebGL. */}
+      {/* BACKGROUND (Somente Desktop) */}
       {!isMobile && (
         <div
           style={{
@@ -332,36 +315,43 @@ export default function App() {
         progress={progressState}
       />
 
-      {/* CORREÇÃO: Reforço de segurança nos cliques pro R3F */}
+      {/* CANVAS PRINCIPAL 3D */}
       <div
         id="canvas-container"
         style={{
-          position: "fixed", // Garanta que o container do canvas fique fixo no fundo
+          position: "fixed",
           inset: 0,
           pointerEvents: "none",
           zIndex: 5,
           width: "100%",
           height: "100%",
-          touchAction: "pan-y",
+          touchAction: "none",
         }}
       >
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={window.devicePixelRatio}
-          gl={{ powerPreference: "high-performance", antialias: true }}
-          eventSource={document.getElementById("root")}
-          eventPrefix="client"
+          dpr={
+            isMobile
+              ? Math.min(window.devicePixelRatio, 1.5)
+              : window.devicePixelRatio
+          }
+          gl={{
+            powerPreference: "high-performance",
+            antialias: !isMobile,
+            alpha: true,
+          }}
           eventSource={document.getElementById("root")}
           eventPrefix="client"
           onCreated={({ gl }) => {
-            // CORREÇÃO TELA BRANCA: mantido do seu código original
             const canvasEl = gl.domElement;
             const handleLost = (event) => {
               event.preventDefault();
-              console.warn("WebGL context perdido, aguardando restauração...");
+              console.warn(
+                "ALERTA: WebGL context perdido, aguardando restauração...",
+              );
             };
             const handleRestored = () => {
-              console.warn("WebGL context restaurado.");
+              console.warn("SUCESSO: WebGL context restaurado.");
             };
             canvasEl.addEventListener("webglcontextlost", handleLost, false);
             canvasEl.addEventListener(
@@ -376,7 +366,7 @@ export default function App() {
         </Canvas>
       </div>
 
-      {/* CORREÇÃO: zIndex 10 e position relative garante que sua UI fique inteira na frente do muro transparente 3D */}
+      {/* CONTEÚDO HTML / UI */}
       <div
         className="mobile-scroll-wrapper"
         ref={mobileScrollWrapperRef}
@@ -384,7 +374,7 @@ export default function App() {
       >
         <div className="scroll-container" ref={containerRef}>
           <div className="track" ref={trackRef}>
-            {/* PAINEL 01 */}
+            {/* PAINEL 01: PERFIL */}
             <section className="panel">
               <div className="content-box profile-card-container">
                 <span className="section-tag">VISÃO GERAL &amp; PERFIL</span>
@@ -455,7 +445,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* PAINEL 02 */}
+            {/* PAINEL 02: FRONT-END */}
             <section className="panel">
               <div className="content-box">
                 <span className="section-tag">UI / UX & INTERAÇÃO</span>
@@ -485,7 +475,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* PAINEL 03 */}
+            {/* PAINEL 03: BACK-END */}
             <section className="panel">
               <div className="content-box">
                 <span className="section-tag">ARQUITETURA & API</span>
@@ -517,7 +507,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* PAINEL 04 */}
+            {/* PAINEL 04: IA & AUTOMAÇÃO */}
             <section className="panel">
               <div className="content-box">
                 <span className="section-tag">INTELIGÊNCIA & AUTOMAÇÃO</span>
@@ -544,7 +534,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* PAINEL 05 */}
+            {/* PAINEL 05: CONTATO */}
             <section className="panel">
               <div className="content-box">
                 <span className="section-tag">ENTRE EM CONTATO</span>
@@ -562,6 +552,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* MODAL DE PROJETOS */}
       {selectedProject && (
         <ProjectModal
           project={selectedProject}

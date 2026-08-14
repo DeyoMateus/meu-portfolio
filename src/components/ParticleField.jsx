@@ -52,8 +52,11 @@ export default function ParticleField({ scrollProgress }) {
   const pointsPerShape = useMemo(() => getPointsPerShape(isMobile), [isMobile]);
 
   const { shapes, edges } = useMemo(() => {
-    return buildAllShapes(pointsPerShape);
-  }, [pointsPerShape]);
+    // CORREÇÃO: faltava passar `isMobile` aqui. Sem isso, buildAllShapes()
+    // sempre caía no branch desktop (isMobile=false por padrão) e o novo
+    // conjunto de formas 3D feito pro mobile nunca era usado.
+    return buildAllShapes(pointsPerShape, isMobile);
+  }, [pointsPerShape, isMobile]);
 
   const maxShapeExtentY = useMemo(() => {
     let maxAbsY = 0;
@@ -229,6 +232,21 @@ export default function ParticleField({ scrollProgress }) {
         0.08,
       );
       groupRef.current.scale.setScalar(nextScale);
+
+      if (pointsRef.current) {
+        // CORREÇÃO SENSAÇÃO DE BORRADO NO MOBILE: o tamanho do ponto
+        // (pointsMaterial.size) é fixo em unidades de mundo e NÃO
+        // acompanha a escala do grupo (scale.setScalar acima). No mobile
+        // a forma é renderizada bem menor (mobileFitScale × extraScale,
+        // geralmente ~0.3–0.6), então os pontos ficavam grandes demais
+        // pro tamanho da forma e se sobrepunham, virando uma mancha
+        // borrada em vez de contornos nítidos. Aqui o tamanho do ponto
+        // acompanha a escala atual do grupo, mantendo a proporção certa
+        // (e também "respira" junto com o pulso de transição entre formas).
+        const POINT_SIZE_PER_SCALE_UNIT = isMobile ? 0.19 : 0.15;
+        pointsRef.current.material.size =
+          POINT_SIZE_PER_SCALE_UNIT * (isMobile ? nextScale : 1);
+      }
 
       const baseY = isMobile ? mobileBaseY : 0.1;
       const baseX = isMobile ? 0 : 6.2;
