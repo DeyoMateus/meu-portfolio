@@ -26,6 +26,7 @@
 html,
 body,
 #root {
+  background-color: #0b0f19;
   width: 100%;
   max-width: 100%;
   min-width: 0;
