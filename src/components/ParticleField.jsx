@@ -218,7 +218,7 @@ export default function ParticleField({ scrollProgress }) {
         ? (mobileFitScale || responsiveScale) * extraScale
         : responsiveScale;
 
-      const pulseAmplitude = isMobile ? 0.12 : 0.4;
+      const pulseAmplitude = isMobile ? 0.4 : 0.4;
       const transitionPulse = Math.sin(frac * Math.PI);
       const targetScale = baseScale * (1 + transitionPulse * pulseAmplitude);
       const nextScale = THREE.MathUtils.lerp(
@@ -313,7 +313,7 @@ export default function ParticleField({ scrollProgress }) {
           <bufferAttribute attach="attributes-color" args={[colors, 3]} />
         </bufferGeometry>
         <pointsMaterial
-          size={isMobile ? 0.06 : 0.12}
+          size={isMobile ? 0.1 : 0.15}
           map={texture}
           vertexColors
           transparent

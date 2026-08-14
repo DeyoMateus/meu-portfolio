@@ -98,8 +98,8 @@ export default function ParticleCanvas() {
     // Textura com Núcleo Intenso e Aura Suave
     const createCoreGlowTexture = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = 128;
-      canvas.height = 128;
+      canvas.width = 130;
+      canvas.height = 130;
       const ctx = canvas.getContext("2d");
 
       const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 60);
@@ -150,12 +150,12 @@ export default function ParticleCanvas() {
     const cAmber = new THREE.Color(0xd47a15);
     const cDarkBlue = new THREE.Color(0x111c3a);
 
-    const isMobileDevice = window.innerWidth <= 768;
+    const isMobileDevice = window.innerWidth <= 1280;
 
     // ==========================================
     // 2. PARTÍCULAS AMBIENTES (VELOCIDADE REDUZIDA)
     // ==========================================
-    const NODE_COUNT = isMobileDevice ? 90 : 300;
+    const NODE_COUNT = isMobileDevice ? 60 : 270;
     const nodePositions = new Float32Array(NODE_COUNT * 3);
     const nodeColors = new Float32Array(NODE_COUNT * 3);
     const nodeAlphas = new Float32Array(NODE_COUNT);
@@ -264,7 +264,7 @@ export default function ParticleCanvas() {
     // ==========================================
     // 3. ESTRELAS CADENTES (COMETAS LENTOS)
     // ==========================================
-    const COMET_COUNT = isMobileDevice ? 4 : 7;
+    const COMET_COUNT = isMobileDevice ? 2 : 3;
     const comets = [];
     const COMET_TAIL_DOTS = isMobileDevice ? 35 : 90;
 

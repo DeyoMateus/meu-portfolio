@@ -1,9 +1,9 @@
 export const DESKTOP_POINTS_PER_SHAPE = 1300;
 
-export const MOBILE_POINTS_PER_SHAPE = 810;
+export const MOBILE_POINTS_PER_SHAPE = 600;
 // Mantido por compatibilidade com quem ainda importa o nome antigo.
 export const POINTS_PER_SHAPE = DESKTOP_POINTS_PER_SHAPE;
-export const V_POINTS_COUNT = 300;
+export const V_POINTS_COUNT = 200;
 
 export function getPointsPerShape(isMobile) {
   return isMobile ? MOBILE_POINTS_PER_SHAPE : DESKTOP_POINTS_PER_SHAPE;
@@ -312,20 +312,6 @@ function generateDiamondPositions(count) {
   return { positions: pos, segIds };
 }
 
-// ==========================================================================
-// OTIMIZAÇÃO (Problema 2.2 — o maior gargalo de CPU do projeto):
-// Os 3 builders de arestas abaixo faziam uma varredura O(n²) — comparando
-// CADA ponto com TODOS os outros (1500 x 1500 = 1.125.000 pares só nesta
-// forma, x5 formas = ~5,6 milhões de operações, síncrono, no main thread,
-// toda vez que o componente montava OU que `isMobile` mudava).
-//
-// A troca abaixo é um "spatial hashing" / grid uniforme: cada ponto só é
-// comparado com pontos que caem na mesma célula do grid (tamanho = maxDist)
-// ou em células vizinhas. Como só pontos próximos podem formar aresta de
-// qualquer forma, isso elimina ~99% das comparações desnecessárias e reduz
-// a complexidade de O(n²) para ~O(n) na prática — sem mudar o resultado
-// visual (mesmo critério de distância, mesmas regras de segId).
-// ==========================================================================
 function buildSpatialGrid(pos, cellSize) {
   const totalPoints = pos.length / 3;
   const grid = new Map();
@@ -585,10 +571,6 @@ function buildEdgesForShape(pos, maxDist = 0.4) {
   return new Uint16Array(indices);
 }
 
-// OTIMIZAÇÃO (Problema 2.2): buildAllShapes agora recebe `count`.
-// Quem chama (ParticleField.jsx) decide 1500 (desktop) ou 550 (mobile) via
-// getPointsPerShape(isMobile). Menos pontos = menos células no grid, menos
-// updates de posição por frame, e edges muito mais rápidas de construir.
 export function buildAllShapes(count = DESKTOP_POINTS_PER_SHAPE) {
   const shape1 = generateLogoPositions(count);
   const edge1 = buildEdgesForShape(shape1, 0.42);

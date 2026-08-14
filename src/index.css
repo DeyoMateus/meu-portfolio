@@ -39,6 +39,7 @@ body,
     "Segoe UI",
     sans-serif;
       overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 /* ============================================================
@@ -334,6 +335,7 @@ a {
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
   padding-right: 15%;
+  touch-action: pan-y;
 }
 
 .pg-carousel::-webkit-scrollbar {
@@ -1610,6 +1612,7 @@ a {
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding: 2px;
+    touch-action: pan-y;
   }
 
   .pg-carousel::-webkit-scrollbar {
