@@ -8,9 +8,42 @@ export default function ProjectsGallery({
   const carouselRef = useRef(null);
 
   const scroll = (direction) => {
-    if (carouselRef.current) {
-      const scrollAmount = direction === "left" ? -260 : 260;
-      carouselRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    const carousel = carouselRef.current;
+
+    if (!carousel) return;
+
+    const cards = Array.from(carousel.querySelectorAll(".pg-card"));
+
+    if (!cards.length) return;
+
+    const currentScroll = carousel.scrollLeft;
+
+    if (direction === "right") {
+      const nextCard = cards.find(
+        (card) => card.offsetLeft > currentScroll + 5,
+      );
+
+      if (nextCard) {
+        carousel.scrollTo({
+          left: nextCard.offsetLeft,
+          behavior: "smooth",
+        });
+      }
+
+      return;
+    }
+
+    const previousCards = cards.filter(
+      (card) => card.offsetLeft < currentScroll - 5,
+    );
+
+    const previousCard = previousCards[previousCards.length - 1];
+
+    if (previousCard) {
+      carousel.scrollTo({
+        left: previousCard.offsetLeft,
+        behavior: "smooth",
+      });
     }
   };
 

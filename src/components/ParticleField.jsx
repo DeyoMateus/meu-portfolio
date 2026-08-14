@@ -76,7 +76,7 @@ export default function ParticleField({ scrollProgress }) {
     const fullWorldHeight = getWorldViewportHeight(camera, cameraDistance);
     // Diminuímos o "respiro" para 0.28 (28%) para que o objeto fique ligeiramente
     // menor do que a área total de 35%, evitando bater no topo.
-    const reservedWorldHeight = fullWorldHeight * 0.25;
+    const reservedWorldHeight = fullWorldHeight * 0.35;
     const targetExtent = reservedWorldHeight * 1.2;
     return targetExtent / maxShapeExtentY;
   }, [isMobile, camera, cameraDistance, maxShapeExtentY]);
