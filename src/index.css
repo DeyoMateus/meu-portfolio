@@ -1435,7 +1435,7 @@ canvas {
     touch-action: pan-y !important;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: none;
-    overscroll-behavior-y: auto;
+    overscroll-behavior-y: none !important;
     background: transparent !important;
     pointer-events: auto !important;
     z-index: 20 !important;
@@ -1622,8 +1622,8 @@ canvas {
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x !important;
-    overscroll-behavior-x: contain;
-    overscroll-behavior-y: auto;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding: 2px;

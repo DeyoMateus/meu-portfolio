@@ -219,7 +219,7 @@ export default function App() {
         scrollTrigger: {
           trigger: containerRef.current,
           pin: true,
-          scrub: 0.4,
+          scrub: 0,
           anticipatePin: 1,
           start: "top top",
           end: () => `+=${Math.max(0, track.scrollWidth - window.innerWidth)}`,
@@ -331,20 +331,21 @@ export default function App() {
       <div
         id="canvas-container"
         style={{
+          position: "fixed", // Garanta que o container do canvas fique fixo no fundo
+          inset: 0,
           pointerEvents: "none",
           zIndex: 5,
-          pointerEvents: "none",
           width: "100%",
           height: "100%",
           touchAction: "pan-y",
         }}
-        eventSource={document.getElementById("root")}
-        eventPrefix="client"
       >
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
           dpr={[1, isMobile ? 1.2 : 1.5]}
           gl={{ powerPreference: "high-performance", antialias: false }}
+          eventSource={document.getElementById("root")} // Movido para o Canvas
+          eventPrefix="client" // Movido para o Canvas
         >
           <ambientLight intensity={1} />
           <ParticleField scrollProgress={scrollProgress} />
