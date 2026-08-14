@@ -100,21 +100,22 @@ canvas {
    ============================================================ */
 #canvas-container {
   position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; /* Isso é o equivalente a 'inset: 0' */
+  pointer-events: auto; /* Mantém a interação ativa */
+  touch-action: pan-y;  /* A mágica acontece aqui */
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   z-index: 5;
-  pointer-events: none !important;
   overflow: visible !important;
   mask: none !important;
   -webkit-mask: none !important;
   mask-image: none !important;
   -webkit-mask-image: none !important;
-  pointer-events: none; /* Faz o toque passar direto para rolar a página */
-  touch-action: pan-y;   /* Permite a rolagem vertical nativa */
+
   
 }
 
@@ -125,7 +126,6 @@ canvas {
   max-width: none !important;
   background: transparent !important;
   pointer-events: none !important;
-  pointer-events: none; /* Faz o toque passar direto para rolar a página */
   touch-action: pan-y;   /* Permite a rolagem vertical nativa */
 }
 
