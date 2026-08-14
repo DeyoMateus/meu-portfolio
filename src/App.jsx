@@ -347,16 +347,17 @@ export default function App() {
       >
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={[1, isMobile ? 1.2 : 1.5]}
-          gl={{ powerPreference: "high-performance", antialias: false }}
-          eventSource={document.getElementById("root")} // Movido para o Canvas
-          eventPrefix="client" // Movido para o Canvas
+          dpr={[
+            1,
+            typeof window !== "undefined"
+              ? Math.min(window.devicePixelRatio, 2)
+              : 2,
+          ]}
+          gl={{ powerPreference: "high-performance", antialias: true }}
+          eventSource={document.getElementById("root")}
+          eventPrefix="client"
           onCreated={({ gl }) => {
-            // CORREÇÃO TELA BRANCA: sem isso, ao perder o contexto WebGL
-            // (comum em navegadores restritos como Android/in-app do
-            // Facebook quando a GPU fica sem memória), o navegador NUNCA
-            // tenta restaurar o contexto e a tela fica branca pra sempre
-            // até dar F5. O preventDefault() permite a auto-restauração.
+            // CORREÇÃO TELA BRANCA: mantido do seu código original
             const canvasEl = gl.domElement;
             const handleLost = (event) => {
               event.preventDefault();
