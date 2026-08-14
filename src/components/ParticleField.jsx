@@ -19,7 +19,7 @@ function worldYForScreenFraction(camera, fractionFromTop, distance) {
 
 function useParticleTexture() {
   return useMemo(() => {
-    const size = 64;
+    const size = 256;
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext("2d");
@@ -37,6 +37,8 @@ function useParticleTexture() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
     const tex = new THREE.CanvasTexture(canvas);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
     return tex;
   }, []);

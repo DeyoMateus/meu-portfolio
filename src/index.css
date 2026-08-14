@@ -100,9 +100,9 @@ canvas {
    ============================================================ */
 #canvas-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+ display: block !important;
+  width: 100% !important;
+  height: 100% !important;
   bottom: 0; /* Isso é o equivalente a 'inset: 0' */
   pointer-events: auto; /* Mantém a interação ativa */
   touch-action: pan-y;  /* A mágica acontece aqui */
