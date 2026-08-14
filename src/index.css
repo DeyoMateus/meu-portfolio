@@ -1389,19 +1389,12 @@ canvas {
        o fundo escuro (scene.background). Sem ele, nada pinta o fundo, daí
        o branco. Pintamos aqui via CSS puro, sem custo de GPU. O !important
        é necessário pra vencer o "background: transparent !important" da
-       regra base (linha ~33), usada só no desktop com os 2 canvases ativos. */
+       regra base (linha ~33), usada só no desktop com os 2 canvases ativos.
+       OBS: sem gradiente/brilho aqui de propósito — a `.mobile-scroll-wrapper`
+       tem uma máscara que deixa o topo (28vh–35vh) transparente pra revelar
+       o canvas 3D por trás; qualquer gradiente no fundo aparece "vazando"
+       exatamente nessa faixa durante o scroll. Cor sólida evita esse artefato. */
     background: #12222a !important;
-    background-image:
-      radial-gradient(
-        ellipse 80% 50% at 50% -10%,
-        rgba(219, 176, 87, 0.16),
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 60% 40% at 85% 30%,
-        rgba(219, 176, 87, 0.08),
-        transparent 60%
-      ) !important;
     background-color: #12222a;
     width: 100%;
     min-width: 0;
