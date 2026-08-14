@@ -107,13 +107,7 @@ function generateLogoPositions(count) {
 // ==========================================
 // 1.1. LOGO FVF (MOBILE - Lógica da Carta)
 // ==========================================
-// CORREÇÃO VAZAMENTO: a versão anterior preenchia a "área" da logo com
-// triângulos apontando pro centro [0,0,0]. Como a logo é um traço fino
-// (V/X), não uma forma sólida, esses triângulos eram bem mais largos que
-// o próprio traço — daí a nuvem de partículas escapando pra fora do
-// desenho. Agora, IGUAL à lógica de segmento único do diamante/envelope,
-// toda partícula (tanto a fase de aresta quanto a de preenchimento) fica
-// restrita à faixa (ribbon) do PRÓPRIO traço — nunca sai da linha.
+
 function generateLogoPositionsMobile(count) {
   const pos = new Float32Array(count * 3);
   const segIds = new Int32Array(count);
@@ -228,12 +222,6 @@ function generateLogoPositionsMobile(count) {
   return { positions: pos, segIds };
 }
 
-// Igual ao princípio usado no diamante/envelope: só conecta pontos que
-// pertencem ao MESMO traço (segId). Como aqui não existe mais uma "zona de
-// preenchimento" compartilhada (cada ponto, de aresta ou preenchimento,
-// pertence a um único traço), não precisamos do parâmetro extra de
-// distância pra fill — um único limiar já garante que nenhuma linha
-// atravesse de um traço pro outro.
 function buildEdgesForLogoMobile(pos, segIds, maxDist = 0.3) {
   const indices = [];
   forEachNearbyPair(pos, maxDist, (i, j) => {
@@ -243,9 +231,6 @@ function buildEdgesForLogoMobile(pos, segIds, maxDist = 0.3) {
   return new Uint16Array(indices);
 }
 
-// ==========================================
-// 2. CRISTAL / QUARTZO (Usa lógica de segmentos e malhas estruturadas)
-// ==========================================
 // 2. CRISTAL / CLUSTER DE QUARTZO (Com base rochosa e contornos ultra-nítidos)
 function transformPoint(pt, center, rot) {
   let [x, y, z] = pt;
@@ -480,6 +465,353 @@ function buildEdgesForDiamond(
 }
 
 // ==========================================
+// 2.1. CRISTAL / CLUSTER DE QUARTZO - MOBILE
+
+// ==========================================
+function generateDiamondPositionsMobile(count) {
+  const pos = new Float32Array(count * 3);
+  const segIds = new Int32Array(count);
+
+  // ==========================================
+  // CRISTAIS
+  // ==========================================
+  const crystalSpecs = [
+    [0.0, -1.25, 0.0, 0.45, 2.2, 0.8, 0.0, 0.0, 0.0],
+    [0.38, -1.25, 0.1, 0.36, 1.9, 0.7, 0.1, 0.2, -0.52],
+    [0.78, -1.25, -0.1, 0.28, 1.5, 0.6, -0.1, 0.3, -0.85],
+    [-0.48, -1.25, 0.2, 0.34, 1.6, 0.6, 0.2, -0.2, 0.48],
+    [-0.72, -1.25, -0.2, 0.28, 1.4, 0.55, -0.2, -0.3, 0.72],
+    [0.05, -1.25, 0.38, 0.32, 1.1, 0.5, 0.45, 0.1, -0.1],
+    [-0.88, -1.25, 0.1, 0.24, 1.1, 0.45, 0.3, -0.4, 0.92],
+  ];
+
+  const diamondSegments = [];
+  const triangles = [];
+
+  // ==========================================
+  // CONSTRUÇÃO DOS CRISTAIS
+  // ==========================================
+  crystalSpecs.forEach((spec) => {
+    const [cx, cy, cz, r, hb, ht, rx, ry, rz] = spec;
+
+    const center = [cx, cy, cz];
+    const rot = [rx, ry, rz];
+
+    const sides = 6;
+
+    const baseV = [];
+    const shV = [];
+
+    for (let i = 0; i < sides; i++) {
+      const angle = (i / sides) * Math.PI * 2;
+
+      const bx = Math.cos(angle) * r;
+
+      const bz = Math.sin(angle) * r;
+
+      baseV.push(transformPoint([bx, 0, bz], center, rot));
+
+      shV.push(transformPoint([bx, hb, bz], center, rot));
+    }
+
+    const tipV = transformPoint([0, hb + ht, 0], center, rot);
+
+    for (let i = 0; i < sides; i++) {
+      const next = (i + 1) % sides;
+
+      diamondSegments.push([baseV[i], baseV[next]]);
+
+      diamondSegments.push([shV[i], shV[next]]);
+
+      diamondSegments.push([baseV[i], shV[i]]);
+
+      diamondSegments.push([shV[i], tipV]);
+    }
+
+    for (let i = 0; i < sides; i++) {
+      const next = (i + 1) % sides;
+
+      triangles.push([shV[i], shV[next], tipV]);
+
+      triangles.push([baseV[i], shV[i], shV[next]]);
+
+      triangles.push([baseV[i], shV[next], baseV[next]]);
+    }
+  });
+
+  // ==========================================
+  // BASE ROCHOSA
+  // ==========================================
+  const baseSides = 14;
+
+  const baseVertsTop = [];
+  const baseVertsBottom = [];
+
+  for (let i = 0; i < baseSides; i++) {
+    const angle = (i / baseSides) * Math.PI * 4;
+
+    const noiseR1 = 1.0 + Math.sin(i * 3.7) * 0.15 + Math.cos(i * 1.5) * 0.08;
+
+    const noiseR2 = 1.1 + Math.cos(i * 2.3) * 0.12 + Math.sin(i * 4.1) * 0.08;
+
+    const xTop = Math.cos(angle) * 1.35 * noiseR1;
+
+    const zTop = Math.sin(angle) * 0.85 * noiseR1;
+
+    const yTop = -1.22 + Math.sin(i * 2.5) * 0.06;
+
+    const xBot = Math.cos(angle) * 1.25 * noiseR2;
+
+    const zBot = Math.sin(angle) * 0.75 * noiseR2;
+
+    const yBot = -1.65 + Math.cos(i * 1.8) * 0.05;
+
+    baseVertsTop.push([xTop, yTop, zTop]);
+
+    baseVertsBottom.push([xBot, yBot, zBot]);
+  }
+
+  // ==========================================
+  // ARESTAS DA BASE
+  // ==========================================
+  const baseSegmentStart = diamondSegments.length;
+
+  for (let i = 0; i < baseSides; i++) {
+    const next = (i + 1) % baseSides;
+
+    diamondSegments.push([baseVertsTop[i], baseVertsTop[next]]);
+
+    diamondSegments.push([baseVertsBottom[i], baseVertsBottom[next]]);
+
+    diamondSegments.push([baseVertsTop[i], baseVertsBottom[i]]);
+  }
+
+  const baseSegmentEnd = diamondSegments.length;
+
+  // ==========================================
+  // TRIÂNGULOS DA BASE
+  // ==========================================
+  const baseTriangles = [];
+
+  for (let i = 0; i < baseSides; i++) {
+    const next = (i + 2) % baseSides;
+
+    baseTriangles.push([
+      baseVertsTop[i],
+      baseVertsBottom[i],
+      baseVertsTop[next],
+    ]);
+
+    baseTriangles.push([
+      baseVertsTop[next],
+      baseVertsBottom[i],
+      baseVertsBottom[next],
+    ]);
+
+    baseTriangles.push([[0, -1.22, 0], baseVertsTop[i], baseVertsTop[next]]);
+
+    baseTriangles.push([
+      [0, -1.65, 0],
+      baseVertsBottom[next],
+      baseVertsBottom[i],
+    ]);
+  }
+
+  // ==========================================
+  // DISTRIBUIÇÃO MOBILE
+  // ==========================================
+  //
+  // 75% -> arestas
+  // 15% -> faces dos cristais
+  // 10% -> base rochosa
+  //
+  // A base recebe uma quantidade garantida
+  // para nunca desaparecer no mobile.
+  // ==========================================
+
+  const edgeCount = Math.floor(count * 0.75);
+
+  const crystalFillCount = Math.floor(count * 0.15);
+
+  const baseFillCount = count - edgeCount - crystalFillCount;
+
+  // ==========================================
+  // PESO DAS ARESTAS
+  // ==========================================
+  //
+  // As arestas da base recebem peso extra.
+  // Isso deixa a rocha claramente visível.
+  //
+  const edgeLengths = diamondSegments.map((seg, index) => {
+    const dx = seg[1][0] - seg[0][0];
+
+    const dy = seg[1][1] - seg[0][1];
+
+    const dz = seg[1][2] - seg[0][2];
+
+    let length = Math.hypot(dx, dy, dz);
+
+    // Aumenta artificialmente
+    // a importância visual da base.
+    if (index >= baseSegmentStart) {
+      length *= 1.8;
+    }
+
+    return length || 0.003;
+  });
+
+  const totalLength = edgeLengths.reduce((a, b) => a + b, 0);
+
+  let currentPoint = 0;
+
+  // ==========================================
+  // ARESTAS
+  // ==========================================
+  for (let s = 0; s < diamondSegments.length; s++) {
+    const isLast = s === diamondSegments.length - 1;
+
+    const ptsForSeg = isLast
+      ? edgeCount - currentPoint
+      : Math.max(2, Math.round((edgeLengths[s] / totalLength) * edgeCount));
+
+    const seg = diamondSegments[s];
+
+    for (let j = 0; j < ptsForSeg; j++) {
+      if (currentPoint >= edgeCount) {
+        break;
+      }
+
+      const t = ptsForSeg > 1 ? j / (ptsForSeg - 1) : 0.5;
+
+      // Muito menos ruído que antes.
+      // Isso aumenta a nitidez.
+      const noise = s >= baseSegmentStart ? 0.003 : 0.002;
+
+      pos[currentPoint * 3] =
+        lerp(seg[0][0], seg[1][0], t) + (Math.random() - 0.5) * noise;
+
+      pos[currentPoint * 3 + 1] =
+        lerp(seg[0][1], seg[1][1], t) + (Math.random() - 0.5) * noise;
+
+      pos[currentPoint * 3 + 2] =
+        lerp(seg[0][2], seg[1][2], t) + (Math.random() - 0.5) * noise;
+
+      segIds[currentPoint] = s;
+
+      currentPoint++;
+    }
+  }
+
+  // ==========================================
+  // FACES DOS CRISTAIS
+  // ==========================================
+  const fillSegId = diamondSegments.length;
+
+  let idx = currentPoint * 3;
+
+  for (let i = 0; i < crystalFillCount; i++) {
+    const tri = triangles[i % triangles.length];
+
+    let r1 = Math.random();
+
+    let r2 = Math.random();
+
+    if (r1 + r2 > 1) {
+      r1 = 1 - r1;
+
+      r2 = 1 - r2;
+    }
+
+    const r3 = 1 - r1 - r2;
+
+    const pIdx = currentPoint;
+
+    pos[idx] =
+      r1 * tri[0][0] +
+      r2 * tri[1][0] +
+      r3 * tri[2][0] +
+      (Math.random() - 0.5) * 0.004;
+
+    pos[idx + 1] =
+      r1 * tri[0][1] +
+      r2 * tri[1][1] +
+      r3 * tri[2][1] +
+      (Math.random() - 0.5) * 0.004;
+
+    pos[idx + 2] =
+      r1 * tri[0][2] +
+      r2 * tri[1][2] +
+      r3 * tri[2][2] +
+      (Math.random() - 0.5) * 0.004;
+
+    segIds[pIdx] = fillSegId;
+
+    currentPoint++;
+    idx += 3;
+  }
+
+  // ==========================================
+  // FACES DA BASE ROCHOSA
+  // ==========================================
+  //
+  // Esse bloco é importante:
+  // garante que a parte inferior da
+  // composição continue existindo no mobile.
+  //
+  const baseFillSegId = fillSegId + 1;
+
+  for (let i = 0; i < baseFillCount; i++) {
+    const tri = baseTriangles[i % baseTriangles.length];
+
+    let r1 = Math.random();
+
+    let r2 = Math.random();
+
+    if (r1 + r2 > 1) {
+      r1 = 1 - r1;
+
+      r2 = 1 - r2;
+    }
+
+    const r3 = 1 - r1 - r2;
+
+    const pIdx = currentPoint;
+
+    pos[idx] =
+      r1 * tri[0][0] +
+      r2 * tri[1][0] +
+      r3 * tri[2][0] +
+      (Math.random() - 0.5) * 0.006;
+
+    pos[idx + 1] =
+      r1 * tri[0][1] +
+      r2 * tri[1][1] +
+      r3 * tri[2][1] +
+      (Math.random() - 0.5) * 0.006;
+
+    pos[idx + 2] =
+      r1 * tri[0][2] +
+      r2 * tri[1][2] +
+      r3 * tri[2][2] +
+      (Math.random() - 0.5) * 0.006;
+
+    segIds[pIdx] = baseFillSegId;
+
+    currentPoint++;
+    idx += 3;
+  }
+
+  return {
+    positions: pos,
+    segIds,
+    baseSegmentStart,
+    baseSegmentEnd,
+    fillSegId,
+    baseFillSegId,
+  };
+}
+
+// ==========================================
 // 3. ESFERA
 // ==========================================
 function generateSpherePositions(count) {
@@ -501,6 +833,116 @@ function generateSpherePositions(count) {
     pos[i * 3 + 2] =
       Math.sin(theta) * radiusAtY * r + (Math.random() - 0.5) * 0.035;
   }
+  return pos;
+}
+
+// ==========================================
+// 2.2. EDGES DO CRISTAL - MOBILE
+// Mais conexões = maior brilho e definição
+// ==========================================
+function buildEdgesForDiamondMobile(
+  pos,
+  segIds,
+  maxDistEdge = 0.38,
+  maxDistFill = 0.3,
+) {
+  const indices = [];
+
+  const totalPoints = pos.length / 3;
+
+  let maxSegId = 0;
+
+  for (let i = 0; i < totalPoints; i++) {
+    if (segIds[i] > maxSegId) {
+      maxSegId = segIds[i];
+    }
+  }
+
+  // Existem dois grupos de preenchimento:
+  //
+  // fillSegId      -> faces dos cristais
+  // baseFillSegId  -> faces da base
+  //
+  const crystalFillSegId = maxSegId - 1;
+
+  const baseFillSegId = maxSegId;
+
+  const searchRadius = Math.max(maxDistEdge, maxDistFill);
+
+  forEachNearbyPair(pos, searchRadius, (i, j) => {
+    const segI = segIds[i];
+
+    const segJ = segIds[j];
+
+    const iIsFill = segI >= crystalFillSegId;
+
+    const jIsFill = segJ >= crystalFillSegId;
+
+    // Arestas só conectam
+    // partículas do mesmo segmento.
+    if (!iIsFill && !jIsFill && segI !== segJ) {
+      return;
+    }
+
+    const dx = pos[i * 3] - pos[j * 3];
+
+    const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+
+    const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+
+    const dist = Math.hypot(dx, dy, dz);
+
+    // Preenchimentos têm conexões
+    // menores para não criar uma
+    // nuvem muito pesada.
+    const limitDist = iIsFill || jIsFill ? maxDistFill : maxDistEdge;
+
+    if (dist < limitDist) {
+      indices.push(i, j);
+    }
+  });
+
+  return new Uint16Array(indices);
+}
+
+// ==========================================
+// 3.1. ESFERA - MOBILE
+// Mais densa, externa e luminosa
+// ==========================================
+function generateSpherePositionsMobile(count) {
+  const pos = new Float32Array(count * 3);
+
+  const radiusOuter = 2.3;
+  const radiusInner = 2.08;
+
+  const phi = Math.PI * (3 - Math.sqrt(5));
+
+  for (let i = 0; i < count; i++) {
+    // Apenas uma pequena quantidade de pontos internos.
+    // Isso mantém profundidade sem deixar a esfera apagada.
+    const isInner = i % 7 === 0;
+
+    const r = isInner ? radiusInner : radiusOuter;
+
+    const y = 1 - (i / Math.max(1, count - 1)) * 2;
+
+    const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y));
+
+    const theta = phi * i;
+
+    // Ruído extremamente pequeno para
+    // preservar nitidez.
+    const noise = 0.012;
+
+    pos[i * 3] =
+      Math.cos(theta) * radiusAtY * r + (Math.random() - 0.5) * noise;
+
+    pos[i * 3 + 1] = y * r + (Math.random() - 0.5) * noise;
+
+    pos[i * 3 + 2] =
+      Math.sin(theta) * radiusAtY * r + (Math.random() - 0.5) * noise;
+  }
+
   return pos;
 }
 
@@ -842,17 +1284,20 @@ export function buildAllShapes(
       0.22,
     );
 
-    const diamondData = generateDiamondPositions(count);
+    const diamondData = generateDiamondPositionsMobile(count);
+
     const shape2 = diamondData.positions;
-    const edge2 = buildEdgesForDiamond(
+
+    const edge2 = buildEdgesForDiamondMobile(
       diamondData.positions,
       diamondData.segIds,
-      0.32,
-      0.22,
+      0.38,
+      0.3,
     );
 
-    const shape3 = generateSpherePositions(count);
-    const edge3 = buildEdgesForShape(shape3, 0.45);
+    const shape3 = generateSpherePositionsMobile(count);
+
+    const edge3 = buildEdgesForShape(shape3, 0.54);
 
     const infinityData = generateInfinityPositionsMobile(count);
     const shape4 = infinityData.positions;
