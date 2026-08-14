@@ -1,51 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 
 export default function ContactSection() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [status, setStatus] = useState("idle"); // idle | sending | success | error
-
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus("sending");
-
-    try {
-      // Exemplo usando Web3Forms (substitua 'YOUR_ACCESS_KEY' pela sua chave gratuita em web3forms.com)
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          access_key: "YOUR_ACCESS_KEY_HERE",
-          name: formData.name,
-          email: formData.email,
-          message: formData.message,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setStatus("success");
-        setFormData({ name: "", email: "", message: "" });
-      } else {
-        setStatus("error");
-      }
-    } catch (err) {
-      console.error(err);
-      setStatus("error");
-    }
-  };
-
   return (
     <div className="contact-container">
       <div className="contact-grid">
