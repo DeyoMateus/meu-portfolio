@@ -155,7 +155,7 @@ export default function ParticleCanvas() {
     // ==========================================
     // 2. PARTÍCULAS AMBIENTES (VELOCIDADE REDUZIDA)
     // ==========================================
-    const NODE_COUNT = isMobileDevice ? 60 : 270;
+    const NODE_COUNT = isMobileDevice ? 30 : 270;
     const nodePositions = new Float32Array(NODE_COUNT * 3);
     const nodeColors = new Float32Array(NODE_COUNT * 3);
     const nodeAlphas = new Float32Array(NODE_COUNT);
