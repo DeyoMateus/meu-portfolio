@@ -347,13 +347,10 @@ export default function App() {
       >
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={[
-            1,
-            typeof window !== "undefined"
-              ? Math.min(window.devicePixelRatio, 2)
-              : 2,
-          ]}
+          dpr={window.devicePixelRatio}
           gl={{ powerPreference: "high-performance", antialias: true }}
+          eventSource={document.getElementById("root")}
+          eventPrefix="client"
           eventSource={document.getElementById("root")}
           eventPrefix="client"
           onCreated={({ gl }) => {
