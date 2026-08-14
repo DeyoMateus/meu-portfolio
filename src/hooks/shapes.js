@@ -1,6 +1,6 @@
 export const DESKTOP_POINTS_PER_SHAPE = 1300;
 
-export const MOBILE_POINTS_PER_SHAPE = 500;
+export const MOBILE_POINTS_PER_SHAPE = 1300;
 // Mantido por compatibilidade com quem ainda importa o nome antigo.
 export const POINTS_PER_SHAPE = DESKTOP_POINTS_PER_SHAPE;
 export const V_POINTS_COUNT = 200;
