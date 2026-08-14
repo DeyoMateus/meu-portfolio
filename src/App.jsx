@@ -328,14 +328,17 @@ export default function App() {
       />
 
       {/* CORREÇÃO: Reforço de segurança nos cliques pro R3F */}
-      <div id="canvas-container" style={{ pointerEvents: "none", zIndex: 5 }}>
+      <div
+        id="canvas-container"
+        style={{ pointerEvents: "none", zIndex: 5, pointerEvents: "none" }}
+      >
         <Canvas
           camera={{ position: [0, 0, 9], fov: 60 }}
           dpr={[1, isMobile ? 1.2 : 1.5]}
           gl={{ powerPreference: "high-performance", antialias: false }}
         >
           <ambientLight intensity={1} />
-          <ParticleField scrollProgress={scrollProgress} />
+          <ParticleField />
         </Canvas>
       </div>
 
