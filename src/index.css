@@ -102,7 +102,7 @@ canvas {
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -135,7 +135,7 @@ canvas {
 .scroll-container {
   position: relative;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   overflow-x: hidden;
   overflow-y: hidden;
 }
@@ -144,7 +144,7 @@ canvas {
   display: flex;
   flex-wrap: nowrap;
   width: max-content;
-  height: 100vh;
+  height: 100dvh;
   padding: 0;
   margin: 0;
   gap: 0;
@@ -156,9 +156,9 @@ canvas {
   width: 100vw;
   min-width: 100vw;
   max-width: 100vw;
-  height: 100vh;
-  min-height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
   flex: 0 0 100vw;
   display: flex;
   align-items: center;
@@ -1131,7 +1131,7 @@ canvas {
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
