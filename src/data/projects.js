@@ -44,7 +44,7 @@ export const projectsData = {
       id: "fe-3",
       title: "AçaíFlow",
       description:
-        "Aplicação web interativa desenvolvida com TypeScript, HTML e CSS para montagem e personalização de pedidos. Agiliza o atendimento ao cliente com um fluxo visual intuitivo passo a passo. Altamente versátil, pode ser adaptada facilmente para sorveterias, confeitarias e comércios de alimentação, eliminando gargalos de atendimento e acelerando o fluxo de vendas.",
+        "Aplicação web interativa desenvolvida com TypeScript, HTML e CSS para montagem e personalização de pedidos. Agiliza o atendimento ao cliente com um fluxo visual intuitivo passo a passo. Altamente versátil, pode ser adaptada facilmente para sorveterias, confeitarias e comércios de alimentos em geral, eliminando gargalos de atendimento e acelerando o fluxo de vendas.",
 
       tags: ["html", "CSS", "TypeScript"],
       images: [
@@ -71,7 +71,7 @@ export const projectsData = {
       id: "fe-4",
       title: "Arquitetura e Interiores",
       description:
-        "Landing page de alto padrão voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais de alto valor.",
+        "Landing voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais.",
 
       tags: ["html", "CSS"],
       images: [
@@ -86,7 +86,7 @@ export const projectsData = {
       id: "fe-5",
       title: "Fran Araújo",
       description:
-        "Interface moderna e de alta conversão desenvolvida com React, JavaScript e CSS. Focada no setor de hamburguerias e delivery, oferece um fluxo ágil, intuitivo e responsivo para a escolha de lanches, otimizando a experiência do cliente e acelerando os pedidos diretamente no ambiente digital.",
+        "Site institucional e de posicionamento para a estrategista Fran Araújo. Este projeto apresenta design sofisticado com paleta em ônix, marfim e dourado, navegação fluida com Framer Motion, alternância dinâmica de tema por rolagem de seção e uma experiência digital totalmente responsiva projetada para transformar marcas nas autoridades globais.",
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/fran.png",
       ],

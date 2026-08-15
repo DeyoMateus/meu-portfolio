@@ -35,17 +35,17 @@ export default function App() {
     {
       title: "Sobre Mim",
       content:
-        "Sempre fui movido pelo desejo de fazer mais com menos e de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack. Uno o olhar de quem entende de processos à energia de transformar linhas de código em soluções para o seu negócio com foco total em resultados.",
+        "Sempre fui movido pelo desejo de fazer mais com menos e de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack..Trago a visão de quem entende de processos e a experiência de quem transforma códigos em soluções para o seu negócio com foco em resultados.",
     },
     {
       title: "Experiência & Visão",
       content:
-        "Vivenciei os desafios da logística, produção e gestão de pessoas. Essa vivência criou uma obsessão por eliminar desperdícios de tempo e recursos finitos. Levo essa bagagem para o código, criando sistemas intuitivos que trabalham pelas pessoas, otimizando operações para gerar economia e aumentar seus ganhos.",
+        "Vivenciei os desafios da logística, da produção e da gestão de pessoas. Essa vivência criou uma mentalidade voltada para a eliminação de desperdícios de tempo e recursos. Levo essa bagagem para o código, criando sistemas intuitivos que trabalham a favor das pessoas, otimizando operações para gerar economia e aumentar seus ganhos.",
     },
     {
       title: "Motivação",
       content:
-        "Nada é tão bom que não possa ser melhorado. O que acende minha vontade de resolver problemas complexos é o impacto prático do resultado. Saber o quanto uma boa solução vai poupar tempo, cortar custos e impulsionar seus ganhos é o combustível que me move rumo à evolução constante e à entrega de valor real.",
+        "Acredito que sempre existem oportunidades de melhoramento. O que me motiva a enfrentar problemas complexos é a possibilidade de gerar impactos práticos e mensuráveis por meio das soluções desenvolvidas. Saber que uma solução bem estruturada pode economizar tempo, reduzir custos e contribuir para melhores resultados é o que impulsiona minha busca contínua por evolução e pela geração de valor real.",
     },
     {
       title: "Missão",
