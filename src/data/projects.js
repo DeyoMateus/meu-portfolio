@@ -3,7 +3,7 @@
 export const projectsData = {
   frontend: [
     {
-      id: "fe-2",
+      id: "fe-1",
       title: "SaaS Barbearia",
       description:
         "Sistema inteligente que liberta a barbearia do controle manual no papel. Conta com painel administrativo para gestão de serviços, preços, equipe e relatórios financeiros. Oferece abas intuitivas para agendamentos, histórico, controle de disponibilidade e perfil. Possui automações avançadas como notificações em tempo real, relatórios diários, lembretes e reativação de clientes inativos em conformidade com a LGPD.",
@@ -23,7 +23,7 @@ export const projectsData = {
       githubUrl: "https://github.com/DeyoMateus/barbearia-interface.git",
     },
     {
-      id: "fe-3",
+      id: "fe-2",
       title: "DEVCLUB",
       description:
         "Plataforma de ensino imersiva que transforma a jornada de aprendizado em uma experiência visualmente rica. Desenvolvida com TypeScript e Canvas 2D, prioriza uma navegação fluida e intuitiva para que o aluno explore aulas demonstrativas com total conforto. O projeto une alta performance técnica a um design focado em engajamento, elevando o aprendizado a um novo patamar de usabilidade.",
@@ -41,7 +41,7 @@ export const projectsData = {
     },
 
     {
-      id: "fe-4",
+      id: "fe-3",
       title: "AçaíFlow",
       description:
         "Aplicação web interativa desenvolvida com TypeScript, HTML e CSS para montagem e personalização de pedidos. Agiliza o atendimento ao cliente com um fluxo visual intuitivo passo a passo. Altamente versátil, pode ser adaptada facilmente para sorveterias, confeitarias e comércios de alimentação, eliminando gargalos de atendimento e acelerando o fluxo de vendas.",
@@ -68,7 +68,7 @@ export const projectsData = {
       githubUrl: "https://github.com/DeyoMateus/acaiflow-app.git",
     },
     {
-      id: "fe-5",
+      id: "fe-4",
       title: "Arquitetura e Interiores",
       description:
         "Landing page de alto padrão voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais de alto valor.",
@@ -83,7 +83,19 @@ export const projectsData = {
       ],
     },
     {
-      id: "fe-1",
+      id: "fe-5",
+      title: "Fran Araújo",
+      description:
+        "Interface moderna e de alta conversão desenvolvida com React, JavaScript e CSS. Focada no setor de hamburguerias e delivery, oferece um fluxo ágil, intuitivo e responsivo para a escolha de lanches, otimizando a experiência do cliente e acelerando os pedidos diretamente no ambiente digital.",
+      images: [
+        "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/fran.png",
+      ],
+      tags: ["HTML", "JavaScript", "CSS"],
+      demoUrl: "https://fran-landing-page.vercel.app/",
+      githubUrl: "https://github.com/DeyoMateus/fran-landing-page.git",
+    },
+    {
+      id: "fe-6",
       title: "Dev Burguer Interface",
       description:
         "Interface moderna e de alta conversão desenvolvida com React, JavaScript e CSS. Focada no setor de hamburguerias e delivery, oferece um fluxo ágil, intuitivo e responsivo para a escolha de lanches, otimizando a experiência do cliente e acelerando os pedidos diretamente no ambiente digital.",
