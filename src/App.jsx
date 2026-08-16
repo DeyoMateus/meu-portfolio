@@ -35,7 +35,7 @@ export default function App() {
     {
       title: "Sobre Mim",
       content:
-        "Sempre fui movido pelo desejo de fazer mais com menos e de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack..Trago a visão de quem entende de processos e a experiência de quem transforma códigos em soluções para o seu negócio com foco em resultados.",
+        "Sempre fui movido pelo desejo de fazer mais com menos e de facilitar a rotina das pessoas e empresas. Sou Engenheiro de Produção e Desenvolvedor Full Stack.Trago a visão de quem entende de processos e a experiência de quem transforma códigos em soluções para o seu negócio com foco em resultados.",
     },
     {
       title: "Experiência & Visão",
