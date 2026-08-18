@@ -81,6 +81,8 @@ export const projectsData = {
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184337.png",
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184350.png",
       ],
+      demoUrl: "https://www.karolaineteixeiraarquiteturaeinteriores.com/",
+      githubUrl: "https://github.com/DeyoMateus/front_back.git",
     },
     {
       id: "fe-5",
