@@ -73,7 +73,6 @@ export const projectsData = {
       description:
         "Landing voltada para arquitetos e designers de interiores. Desenvolvida com HTML e CSS modernos para destacar portfólios visuais sofisticados e transformar visitantes em clientes qualificados para projetos residenciais e comerciais.",
 
-      tags: ["html", "CSS"],
       images: [
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184122.png",
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184307.png",
@@ -81,6 +80,8 @@ export const projectsData = {
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184337.png",
         "https://paprdnqnkcejxkwagayw.supabase.co/storage/v1/object/public/fotos%20do%20portifolio/Captura%20de%20tela%202026-08-10%20184350.png",
       ],
+
+      tags: ["html", "CSS"],
       demoUrl: "https://www.karolaineteixeiraarquiteturaeinteriores.com/",
       githubUrl: "https://github.com/DeyoMateus/front_back.git",
     },
