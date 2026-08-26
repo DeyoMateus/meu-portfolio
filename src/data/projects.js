@@ -19,7 +19,7 @@ export const projectsData = {
       ],
       tags: ["React", "JavaScript", "CSS", "Canvas"],
       demoUrl:
-        "https://barbearia-frontend.zmdxlj.easypanel.host/barbeariateste/login",
+        "https://barbearia-frontend.zmdxlj.easypanel.host/barbeariateste/app",
       githubUrl: "https://github.com/DeyoMateus/barbearia-interface.git",
     },
     {

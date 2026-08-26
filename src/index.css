@@ -861,7 +861,6 @@ canvas {
 
   border: 2px solid var(--dourado);
 
-  box-shadow: 0 0 15px rgba(219, 176, 87, 0.4);
 
   flex-shrink: 0;
 }
