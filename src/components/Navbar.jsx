@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { id: 4, label: "05. Contato" },
 ];
 
-export default function Navbar({ activePanel, onNavigate, progress = 0 }) {
+export default function Navbar({ activePanel, onNavigate }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Utiliza o hook para detectar se está em mobile/tablet estreito (<= 768px)
@@ -24,7 +24,11 @@ export default function Navbar({ activePanel, onNavigate, progress = 0 }) {
     <header className="navbar-header">
       <div
         className="navbar-progress-bar"
-        style={{ width: `${Math.min(Math.max(progress * 100, 0), 100)}%` }}
+        style={{
+          width: "100%",
+          transformOrigin: "left center",
+          transform: "scaleX(var(--scroll-progress, 0))",
+        }}
       />
 
       <div className="navbar-container">

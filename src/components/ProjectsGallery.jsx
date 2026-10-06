@@ -123,6 +123,7 @@ export default function ProjectsGallery({
                 }
                 alt={project.title}
                 loading="lazy"
+                decoding="async"
               />
               <div className="pg-card-overlay" />
             </div>

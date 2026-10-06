@@ -471,7 +471,7 @@ canvas {
 
   height: auto;
 
-  background: rgba(2, 6, 23, 0.85);
+  background: rgba(2, 6, 23, 0.94);
 
   border: 1px solid rgba(245, 158, 11, 0.25);
 
@@ -482,8 +482,6 @@ canvas {
   display: flex;
   flex-direction: column;
 
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 
   cursor: pointer;
 
@@ -965,7 +963,7 @@ canvas {
 
   align-self: flex-start;
 
-  background: rgba(2, 6, 23, 0.85);
+  background: rgba(2, 6, 23, 0.92);
 
   border: 1px solid rgba(219, 176, 87, 0.3);
 
@@ -973,8 +971,6 @@ canvas {
 
   padding: 1.2rem 1.5rem;
 
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 
   transform: translateZ(0);
 
@@ -1116,10 +1112,8 @@ canvas {
 
   z-index: 100;
 
-  background: rgba(18, 34, 42, 0.85);
+  background: rgba(18, 34, 42, 0.96);
 
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 
   border-bottom: 1px solid rgba(219, 176, 87, 0.15);
 }
@@ -1138,7 +1132,7 @@ canvas {
 
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
 
-  transition: width 0.1s linear;
+  transition: transform 0.1s linear;
 }
 
 .navbar-container {
@@ -1318,8 +1312,6 @@ canvas {
 
   background: rgba(2, 6, 23, 0.95);
 
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 
   border-bottom: 1px solid rgba(219, 176, 87, 0.3);
 
@@ -3017,3 +3009,14 @@ canvas {
   }
 }
 
+
+/* ============================================================
+   FUNDO ESCURO DE SEGURANÇA (desktop)
+   Se o fundo de partículas for desligado (modo econômico) ou
+   ainda não tiver carregado, a página não pode ficar branca.
+   ============================================================ */
+@media (min-width: 1281px) {
+  html {
+    background-color: #020712 !important;
+  }
+}

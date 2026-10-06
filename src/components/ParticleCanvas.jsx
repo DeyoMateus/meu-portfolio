@@ -1,12 +1,20 @@
 import { useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-export default function ParticleCanvas() {
-  const mountRef = useRef(null);
+/**
+ * Fundo de partículas renderizado NO MESMO canvas/contexto WebGL do 3D principal.
+ * Cena e câmera próprias (visual idêntico ao antigo canvas separado), mas com
+ * um único contexto, um único drawing buffer e um único requestAnimationFrame.
+ * `lite` reduz o custo (metade dos nós e sem cauda de scroll; cometas continuam).
+ */
+export default function ParticleCanvas({ lite = false }) {
+  const gl = useThree((state) => state.gl);
+  const api = useRef(null);
+  const liteRef = useRef(lite);
+  liteRef.current = lite;
 
   useEffect(() => {
-    const currentMount = mountRef.current;
-    if (!currentMount) return;
 
     // ==========================================
     // 0. CUSTOM SHADERS (Controle de Tamanho, Opacidade e Brilho GPU)
@@ -122,7 +130,6 @@ export default function ParticleCanvas() {
     // 1. CENA E CÂMERA
     // ==========================================
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020712);
 
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -132,34 +139,6 @@ export default function ParticleCanvas() {
     );
     camera.position.set(0, 0, 15);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    currentMount.appendChild(renderer.domElement);
-
-    // CORREÇÃO TELA BRANCA: sem preventDefault() aqui, se o navegador
-    // descartar o contexto WebGL por falta de memória de GPU, ele nunca
-    // tenta restaurar sozinho e o canvas fica branco/preto até dar F5.
-    const handleContextLost = (event) => {
-      event.preventDefault();
-      cancelAnimationFrame(animationFrameId);
-      console.warn("WebGL context perdido (ParticleCanvas), pausando loop.");
-    };
-    const handleContextRestored = () => {
-      console.warn("WebGL context restaurado (ParticleCanvas), retomando.");
-      clock.getDelta(); // descarta o tempo acumulado enquanto ficou perdido
-      animate();
-    };
-    renderer.domElement.addEventListener(
-      "webglcontextlost",
-      handleContextLost,
-      false,
-    );
-    renderer.domElement.addEventListener(
-      "webglcontextrestored",
-      handleContextRestored,
-      false,
-    );
 
     const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
     const handleMouseMove = (event) => {
@@ -242,7 +221,7 @@ export default function ParticleCanvas() {
     const nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
     scene.add(nodePoints);
 
-    const DOTS_PER_TAIL = isMobileDevice ? 12 : 28;
+    const DOTS_PER_TAIL = isMobileDevice ? 10 : 20;
     const TOTAL_TAIL_POINTS = NODE_COUNT * DOTS_PER_TAIL;
 
     const tailPositions = new Float32Array(TOTAL_TAIL_POINTS * 3);
@@ -253,6 +232,23 @@ export default function ParticleCanvas() {
     for (let i = 0; i < TOTAL_TAIL_POINTS; i++) {
       tailSizes[i] = Math.random() * 1.8 + 0.4;
       tailAlphas[i] = 1.0;
+    }
+
+    // Cor da cauda depende só da posição na cauda (t): calcula UMA vez, não por frame.
+    {
+      const c = new THREE.Color();
+      for (let i = 0; i < NODE_COUNT; i++) {
+        for (let d = 0; d < DOTS_PER_TAIL; d++) {
+          const t = (d + 1) / DOTS_PER_TAIL;
+          if (t < 0.2) c.lerpColors(cWhite, cGold, t / 0.2);
+          else if (t < 0.65) c.lerpColors(cGold, cAmber, (t - 0.2) / 0.45);
+          else c.lerpColors(cAmber, cDarkBlue, (t - 0.65) / 0.35);
+          const k = (i * DOTS_PER_TAIL + d) * 3;
+          tailColors[k] = c.r;
+          tailColors[k + 1] = c.g;
+          tailColors[k + 2] = c.b;
+        }
+      }
     }
 
     const tailGeometry = new THREE.BufferGeometry();
@@ -382,52 +378,39 @@ export default function ParticleCanvas() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener(
-      "wheel",
-      (e) => {
-        targetSpeedModifier = Math.sign(e.deltaY) * 0.1;
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          targetSpeedModifier = 0;
-        }, 150);
-      },
-      { passive: true },
-    );
+    const handleWheel = (e) => {
+      targetSpeedModifier = Math.sign(e.deltaY) * 0.1;
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        targetSpeedModifier = 0;
+      }, 150);
+    };
+    window.addEventListener("wheel", handleWheel, { passive: true });
 
     // ==========================================
     // 5. LOOP DE ANIMAÇÃO
     // ==========================================
     const clock = new THREE.Clock();
-    let animationFrameId;
     const X_BOUNDS = 30;
     const tmpColor = new THREE.Color();
 
-    let isTabVisible = !document.hidden;
     const handleVisibilityChange = () => {
-      isTabVisible = !document.hidden;
-      if (!isTabVisible) {
-        cancelAnimationFrame(animationFrameId);
-      } else {
-        clock.getDelta(); // Limpa o acumulado do relógio
-        const currentTime = clock.getElapsedTime();
-
-        // Reseta completamente os cometas ao voltar para evitar estados corrompidos
-        comets.forEach((cObj, idx) => {
-          cObj.active = false;
-          cObj.headMat.opacity = 0;
-          cObj.tailMat.uniforms.globalOpacity.value = 0;
-          cObj.lastSpawn = currentTime + idx * 4.0; // Espaça o reaparecimento de forma limpa
-        });
-
-        animate();
-      }
+      if (document.hidden) return;
+      clock.getDelta(); // descarta o tempo acumulado enquanto a aba esteve oculta
+      const currentTime = clock.getElapsedTime();
+      comets.forEach((cObj, idx) => {
+        cObj.active = false;
+        cObj.headMat.opacity = 0;
+        cObj.tailMat.uniforms.globalOpacity.value = 0;
+        cObj.lastSpawn = currentTime + idx * 4.0;
+      });
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    function animate() {
-      if (!isTabVisible) return;
-      animationFrameId = requestAnimationFrame(animate);
+    function tick() {
       const time = clock.getElapsedTime();
+      const lite = liteRef.current;
+      nodeGeometry.setDrawRange(0, lite ? Math.floor(NODE_COUNT / 2) : NODE_COUNT);
 
       camera.position.x += (mouse.targetX - camera.position.x) * 0.04;
       camera.position.y += (mouse.targetY - camera.position.y) * 0.04;
@@ -437,6 +420,9 @@ export default function ParticleCanvas() {
         (targetSpeedModifier - currentSpeedModifier) * 0.08;
       const scrollIntensity = Math.abs(currentSpeedModifier);
       const isScrolling = scrollIntensity > 0.005;
+      // Cauda só é calculada/enviada à GPU enquanto há scroll.
+      const tailActive = !lite && scrollIntensity > 0.004;
+      tailPoints.visible = tailActive;
 
       const MAX_TAIL_LENGTH = 0.25;
       const baseTailLength = Math.min(scrollIntensity * 3.6, MAX_TAIL_LENGTH);
@@ -452,7 +438,6 @@ export default function ParticleCanvas() {
       const nSiz = nodeGeometry.attributes.size.array;
 
       const tPos = tailGeometry.attributes.position.array;
-      const tCol = tailGeometry.attributes.customColor.array;
       const tAlp = tailGeometry.attributes.customAlpha.array;
       const tSiz = tailGeometry.attributes.size.array;
 
@@ -492,7 +477,8 @@ export default function ParticleCanvas() {
         const particleTailLength =
           baseTailLength * (0.5 + vel.depthFactor * 0.7);
 
-        for (let d = 0; d < DOTS_PER_TAIL; d++) {
+        tailIdx = i * DOTS_PER_TAIL;
+        for (let d = 0; tailActive && d < DOTS_PER_TAIL; d++) {
           const t = (d + 1) / DOTS_PER_TAIL;
           const distOnTail = t * particleTailLength * tailDir;
 
@@ -503,15 +489,6 @@ export default function ParticleCanvas() {
           tPos[tailIdx * 3] = nPos[i * 3] + distOnTail;
           tPos[tailIdx * 3 + 1] = nPos[i * 3 + 1] + jitterY;
           tPos[tailIdx * 3 + 2] = nPos[i * 3 + 2] + jitterZ;
-
-          if (t < 0.2) tmpColor.lerpColors(cWhite, cGold, t / 0.2);
-          else if (t < 0.65)
-            tmpColor.lerpColors(cGold, cAmber, (t - 0.2) / 0.45);
-          else tmpColor.lerpColors(cAmber, cDarkBlue, (t - 0.65) / 0.35);
-
-          tCol[tailIdx * 3] = tmpColor.r;
-          tCol[tailIdx * 3 + 1] = tmpColor.g;
-          tCol[tailIdx * 3 + 2] = tmpColor.b;
 
           tSiz[tailIdx] =
             (1.1 + 0.3 * pulse) * (1 - t * 0.4) * (0.6 + vel.depthFactor * 0.6);
@@ -526,10 +503,11 @@ export default function ParticleCanvas() {
       nodeGeometry.attributes.customAlpha.needsUpdate = true;
       nodeGeometry.attributes.size.needsUpdate = true;
 
-      tailGeometry.attributes.position.needsUpdate = true;
-      tailGeometry.attributes.customColor.needsUpdate = true;
-      tailGeometry.attributes.customAlpha.needsUpdate = true;
-      tailGeometry.attributes.size.needsUpdate = true;
+      if (tailActive) {
+        tailGeometry.attributes.position.needsUpdate = true;
+        tailGeometry.attributes.customAlpha.needsUpdate = true;
+        tailGeometry.attributes.size.needsUpdate = true;
+      }
 
       // --- ESTRELAS CADENTES (COMETAS LENTOS) ---
       comets.forEach((cObj, idx) => {
@@ -608,10 +586,9 @@ export default function ParticleCanvas() {
         }
       });
 
-      renderer.render(scene, camera);
     }
 
-    animate();
+    api.current = { scene, camera, tick };
 
     let resizeTimeout;
     const handleResize = () => {
@@ -619,33 +596,21 @@ export default function ParticleCanvas() {
       resizeTimeout = setTimeout(() => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
       }, 120);
     };
     window.addEventListener("resize", handleResize);
 
     return () => {
+      api.current = null;
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      renderer.domElement.removeEventListener(
-        "webglcontextlost",
-        handleContextLost,
-      );
-      renderer.domElement.removeEventListener(
-        "webglcontextrestored",
-        handleContextRestored,
-      );
       clearTimeout(resizeTimeout);
-      cancelAnimationFrame(animationFrameId);
-
-      if (currentMount && renderer.domElement) {
-        currentMount.removeChild(renderer.domElement);
-      }
+      clearTimeout(scrollTimeout);
 
       scene.clear();
-      renderer.dispose();
       sparkleTexture.dispose();
       coreTexture.dispose();
       nodeGeometry.dispose();
@@ -662,18 +627,28 @@ export default function ParticleCanvas() {
     };
   }, []);
 
-  return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: -1,
-        pointerEvents: "none",
-      }}
-    />
+  // Prioridade 1: assume o render do R3F. Fundo primeiro, 3D principal por cima.
+  useFrame(({ gl: renderer, scene, camera }) => {
+    const a = api.current;
+    if (!a) return;
+    a.tick();
+    renderer.autoClear = false;
+    renderer.setClearColor(0x020712, 1);
+    renderer.clear();
+    renderer.setClearColor(0x000000, 0);
+    renderer.render(a.scene, a.camera);
+    renderer.clearDepth();
+    renderer.render(scene, camera);
+  }, 1);
+
+  // Ao desmontar (modo econômico), devolve o render automático ao R3F.
+  useEffect(
+    () => () => {
+      gl.autoClear = true;
+      gl.setClearColor(0x000000, 0);
+    },
+    [gl],
   );
+
+  return null;
 }

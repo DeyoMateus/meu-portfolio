@@ -1,18 +1,29 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, lazy, Suspense } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { Canvas } from "@react-three/fiber";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import ParticleField from "./components/ParticleField";
 import ProjectsGallery from "./components/ProjectsGallery";
 import ProjectModal from "./components/ProjectModal";
 import ContactSection from "./components/ContactSection";
 import Navbar from "./components/Navbar";
 import { projectsData } from "./data/projects";
-import ParticleCanvas from "./components/ParticleCanvas";
 import { useTiltEffect } from "./hooks/useTiltEffect";
 import { useIsMobile } from "./hooks/useIsMobile";
+
+// 3D carregado sob demanda: o conteúdo aparece primeiro, o WebGL entra depois.
+const Scene3D = lazy(() => import("./components/Scene3D"));
+
+// Progresso do scroll vai direto para uma CSS variable (sem re-render do React).
+let lastProgressWritten = -1;
+function setProgressVar(progress) {
+  if (Math.abs(progress - lastProgressWritten) < 0.002) return;
+  lastProgressWritten = progress;
+  document.documentElement.style.setProperty(
+    "--scroll-progress",
+    progress.toFixed(4),
+  );
+}
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -26,7 +37,7 @@ export default function App() {
   const isMobile = useIsMobile(1280);
   const mobileScrollWrapperRef = useRef(null);
 
-  const [progressState, setProgressState] = useState(0);
+  const [show3D, setShow3D] = useState(false);
   const [activePanel, setActivePanel] = useState(0);
   const [selectedProject, setSelectedProject] = useState(null);
   const [profileIndex, setProfileIndex] = useState(0);
@@ -68,6 +79,18 @@ export default function App() {
   ];
 
   useTiltEffect();
+
+  // Só monta o 3D quando o navegador está ocioso (primeira pintura já feita).
+  useEffect(() => {
+    let id;
+    const start = () => setShow3D(true);
+    if ("requestIdleCallback" in window) {
+      id = window.requestIdleCallback(start, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    id = window.setTimeout(start, 400);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const updateCardHeight = () => {
@@ -163,7 +186,7 @@ export default function App() {
           const progress =
             totalPanels <= 1 ? 0 : closestIndex / (totalPanels - 1);
           scrollProgress.current = progress;
-          setProgressState(Math.round(progress * 100) / 100);
+          setProgressVar(progress);
         };
 
         const requestMobileUpdate = () => {
@@ -195,6 +218,8 @@ export default function App() {
       // ==========================================
       const clamp01 = gsap.utils.clamp(0, 1);
 
+      const lastOpacity = new Array(totalPanels).fill(-1);
+
       const updateDesktopPanels = (progress) => {
         allPanels.forEach(({ els }, index) => {
           const panelCenterProgress = index / (totalPanels - 1);
@@ -207,6 +232,9 @@ export default function App() {
           if (index === totalPanels - 1 && progress >= 0.95) {
             opacity = 1;
           }
+          opacity = Math.round(opacity * 100) / 100;
+          if (opacity === lastOpacity[index]) return;
+          lastOpacity[index] = opacity;
           els.forEach((element) => {
             element.style.opacity = opacity;
           });
@@ -232,7 +260,7 @@ export default function App() {
             setActivePanel((previous) =>
               previous !== currentIndex ? currentIndex : previous,
             );
-            setProgressState(Math.round(progress * 100) / 100);
+            setProgressVar(progress);
             updateDesktopPanels(progress);
           },
         },
@@ -295,76 +323,27 @@ export default function App() {
 
   return (
     <>
-      {/* BACKGROUND (Somente Desktop) */}
-      {!isMobile && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        >
-          <ParticleCanvas />
-        </div>
+      {/* BACKGROUND + 3D (carregados sob demanda, após a primeira pintura) */}
+      {show3D && (
+        <Suspense fallback={null}>
+          <div
+            id="canvas-container"
+            style={{
+              position: "fixed",
+              inset: 0,
+              pointerEvents: "none",
+              zIndex: 5,
+              width: "100%",
+              height: "100%",
+              touchAction: "none",
+            }}
+          >
+            <Scene3D scrollProgress={scrollProgress} isMobile={isMobile} />
+          </div>
+        </Suspense>
       )}
 
-      <Navbar
-        activePanel={activePanel}
-        onNavigate={handleNavigate}
-        progress={progressState}
-      />
-
-      {/* CANVAS PRINCIPAL 3D */}
-      <div
-        id="canvas-container"
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 5,
-          width: "100%",
-          height: "100%",
-          touchAction: "none",
-        }}
-      >
-        <Canvas
-          camera={{ position: [0, 0, 9], fov: 60 }}
-          dpr={
-            isMobile
-              ? Math.min(window.devicePixelRatio, 1.5)
-              : window.devicePixelRatio
-          }
-          gl={{
-            powerPreference: "high-performance",
-            antialias: !isMobile,
-            alpha: true,
-          }}
-          eventSource={document.getElementById("root")}
-          eventPrefix="client"
-          onCreated={({ gl }) => {
-            const canvasEl = gl.domElement;
-            const handleLost = (event) => {
-              event.preventDefault();
-              console.warn(
-                "ALERTA: WebGL context perdido, aguardando restauração...",
-              );
-            };
-            const handleRestored = () => {
-              console.warn("SUCESSO: WebGL context restaurado.");
-            };
-            canvasEl.addEventListener("webglcontextlost", handleLost, false);
-            canvasEl.addEventListener(
-              "webglcontextrestored",
-              handleRestored,
-              false,
-            );
-          }}
-        >
-          <ambientLight intensity={1} />
-          <ParticleField scrollProgress={scrollProgress} />
-        </Canvas>
-      </div>
+      <Navbar activePanel={activePanel} onNavigate={handleNavigate} />
 
       {/* CONTEÚDO HTML / UI */}
       <div
